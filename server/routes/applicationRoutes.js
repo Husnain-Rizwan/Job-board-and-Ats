@@ -6,13 +6,32 @@ const upload = require("../middleware/uploadMiddleware");
 
 const { 
   createApplication,
-  getRecruiterApplications
+  getRecruiterApplications,
+  getRecruiterApplicationById,
+  updateApplicationStatus,
+  getRecruiterApplicationStatistics
  } = require("../controllers/applicatioController");
 
 const router = express.Router();
 
 // Recruiters can only view applications for jobs they uploaded.
 router.get("", protect, authorize("recruiter"), getRecruiterApplications);
+
+router.get("/statistics", protect, authorize("recruiter"), getRecruiterApplicationStatistics);
+
+router.get(
+  "/:applicationId",
+  protect,
+  authorize("recruiter"),
+  getRecruiterApplicationById
+);
+
+router.patch(
+  "/:applicationId/status",
+  protect,
+  authorize("recruiter"),
+  updateApplicationStatus
+);
 
 router.post("/:jobId", protect, authorize("jobseeker"), upload.single("resume"), createApplication);
 

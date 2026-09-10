@@ -2,6 +2,30 @@ const Application = require("../models/Application");
 const Job = require("../models/Job");
 const cloudinary = require("../config/cloudinary");
 
+const APPLICATION_STATUSES = [
+  "applied",
+  "shortlisted",
+  "interview",
+  "selected",
+  "rejected"
+];
+
+// Returns an application only when its job belongs to the logged-in recruiter.
+const findRecruiterApplication = async (applicationId, recruiterId) => {
+  const application = await Application.findById(applicationId);
+
+  if (!application) {
+    return null;
+  }
+
+  const job = await Job.findOne({
+    _id: application.job,
+    recruiter: recruiterId
+  });
+
+  return job ? application : null;
+};
+
 // Create Application
 const createApplication = async (req, res, next) => {
   try {
@@ -153,7 +177,128 @@ const getRecruiterApplications = async (req, res, next) => {
   }
 };
 
+// Get one application, including the applicant, resume, job, and status history.
+const getRecruiterApplicationById = async (req, res, next) => {
+  try {
+    const application = await findRecruiterApplication(
+      req.params.applicationId,
+      req.user._id
+    );
+
+    // Return 404 for another recruiter's application so its existence is not exposed.
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found"
+      });
+    }
+
+    await application.populate([
+      {
+        path: "applicant",
+        select: "name email professionalTitle phone location bio skills education experience"
+      },
+      {
+        path: "job",
+        select: "title description company location employmentType salary skills experience deadline status"
+      },
+      {
+        path: "statusHistory.changedBy",
+        select: "name email role"
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      application
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Change an application's status and record the recruiter and timestamp.
+const updateApplicationStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+
+    if (!APPLICATION_STATUSES.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Status must be one of: ${APPLICATION_STATUSES.join(", ")}`
+      });
+    }
+
+    const application = await findRecruiterApplication(
+      req.params.applicationId,
+      req.user._id
+    );
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found"
+      });
+    }
+
+    if (application.status === status) {
+      return res.status(400).json({
+        success: false,
+        message: `Application is already ${status}`
+      });
+    }
+
+    application.status = status;
+    application.statusHistory.push({
+      status,
+      changedBy: req.user._id
+    });
+    await application.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Application status updated successfully",
+      application
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Aggregate the authenticated recruiter's applications for dashboard use.
+const getRecruiterApplicationStatistics = async (req, res, next) => {
+  try {
+    const recruiterJobs = await Job.find({ recruiter: req.user._id }).select("_id");
+    const jobIds = recruiterJobs.map((job) => job._id);
+
+    const groupedStats = await Application.aggregate([
+      { $match: { job: { $in: jobIds } } },
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+
+    const statistics = APPLICATION_STATUSES.reduce((totals, status) => {
+      totals[status] = 0;
+      return totals;
+    }, {});
+
+    groupedStats.forEach(({ _id, count }) => {
+      statistics[_id] = count;
+    });
+
+    res.status(200).json({
+      success: true,
+      totalApplications: Object.values(statistics).reduce((sum, count) => sum + count, 0),
+      statistics
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createApplication,
-  getRecruiterApplications
+  getRecruiterApplications,
+  getRecruiterApplicationById,
+  updateApplicationStatus,
+  getRecruiterApplicationStatistics
 };
