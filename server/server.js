@@ -11,6 +11,8 @@ const jobRoutes = require("./routes/jobRoutes");
 const userRoutes = require("./routes/userRoutes");
 const savedJobRoutes = require("./routes/savedJobRoutes")
 const applicationRoutes = require("./routes/applicationRoutes")
+const recruiterDashboardRoutes = require("./routes/recruiterDashboardRoutes");
+const jobseekerDashboardRoutes = require("./routes/jobseekerDashboardRoutes")
 
 const connectDB = require("./config/db");
 
@@ -22,7 +24,12 @@ const SavedJob = require("./models/SavedJob");
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
@@ -32,7 +39,14 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/companies", companyRoutes);
 app.use("/api/savedJobs", savedJobRoutes);
 app.use("/api/applications", applicationRoutes);
+app.use("/api/recruiter/dashboard", recruiterDashboardRoutes);
+app.use("/api/jobseeker/dashboard", jobseekerDashboardRoutes);
 
+app.get("/api/test", (req, res) => {
+  res.json({
+    message: "Backend is connected successfully!",
+  });
+}); 
 
 app.get("/", (req, res) => {
     res.json({

@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.post("/:jobId", protect, authorize("jobseeker"), createSavedJob);
 router.delete("/:jobId", protect, authorize("jobseeker"), deleteSavedJob);
-router.get("", protect, authorize("jobseeker"), getSavedJobs);
+router.get("/", protect, authorize("jobseeker"), getSavedJobs);
 
 
 module.exports = router;

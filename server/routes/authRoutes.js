@@ -9,8 +9,10 @@ const authorize = require("../middleware/roleMiddleware")
 
 const router = express.Router();
 
+
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+
 
 router.get("/me", protect, (req, res) => {
   res.status(200).json({
@@ -25,7 +27,5 @@ router.get("/recruiter-test", protect, authorize("recruiter"), (req, res) => {
     user: req.user
   })
 });
-
-
 
 module.exports = router;
