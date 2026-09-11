@@ -10,6 +10,39 @@ const APPLICATION_STATUSES = [
   "rejected"
 ];
 
+const uploadResumeToCloudinary = async (file, userId) => {
+  const cloudinary = require("../config/cloudinary");
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "job-board/resumes",
+        resource_type: "raw",
+        public_id: `${userId}_${Date.now()}.pdf`
+      },
+      (error, result) => error ? reject(error) : resolve(result)
+    );
+
+    uploadStream.end(file.buffer);
+  });
+};
+
+const uploadResume = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Resume is required" });
+    }
+
+    const uploadResult = await uploadResumeToCloudinary(req.file, req.user._id);
+    res.status(201).json({
+      success: true,
+      resume: { url: uploadResult.secure_url, filename: req.file.originalname }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Returns an application only when its job belongs to the logged-in recruiter.
 const findRecruiterApplication = async (applicationId, recruiterId) => {
 
@@ -40,10 +73,16 @@ const findRecruiterApplication = async (applicationId, recruiterId) => {
 const createApplication = async (req, res, next) => {
   try {
     const { jobId } = req.params;
-    const { coverletter } = req.body;
+    const { coverletter, resume } = req.body;
 
-    // 1. Check if resume was uploaded
-    if (!req.file) {
+    // Accept the preferred uploaded-resume metadata, plus the existing multipart fallback.
+    let applicationResume = resume;
+    if (!applicationResume && req.file) {
+      const uploadResult = await uploadResumeToCloudinary(req.file, req.user._id);
+      applicationResume = { url: uploadResult.secure_url, filename: req.file.originalname };
+    }
+
+    if (!applicationResume?.url || !applicationResume?.filename) {
       return res.status(400).json({
         success: false,
         message: "Resume is required"
@@ -81,37 +120,12 @@ const createApplication = async (req, res, next) => {
       });
     }
 
-    // 5. Upload resume to Cloudinary
-    const cloudinary = require("../config/cloudinary");
-
-    const uploadResult = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: "job-board/resumes",
-          resource_type: "raw",
-          public_id: `${req.user._id}_${Date.now()}.pdf`
-        },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result);
-          }
-        }
-      );
-
-      uploadStream.end(req.file.buffer);
-    });
-
-    // 6. Create application
+    // 5. Create application
     const application = await Application.create({
       applicant: req.user._id,
       job: jobId,
 
-      resume: {
-        url: uploadResult.secure_url,
-        filename: req.file.originalname
-      },
+      resume: applicationResume,
 
       coverletter: coverletter || null,
 
@@ -504,6 +518,7 @@ const getRecruiterApplicationStatistics = async (
 
 module.exports = {
   createApplication,
+  uploadResume,
   getRecruiterApplications,
   getRecruiterApplicationById,
   updateApplicationStatus,

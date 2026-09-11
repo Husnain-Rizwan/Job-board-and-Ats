@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import HeroSection from "../components/HeroSection";
-import PopularSearches from "../components/PopularSearches";
-import FeaturedJobs from "../components/FeaturedJobs";
-import JobCategories from "../components/JobCategories";
-import HowItWorks from "../components/HowItWorks";
-import JobSeekerSection from "../components/JobSeekerSection";
-import RecruiterSection from "../components/RecruiterSection";
-import StatsSection from "../components/StatsSection";
-import CTASection from "../components/CTASection";
+import HeroSection from "../components/homeComponents/HeroSection";
+import PopularSearches from "../components/homeComponents/PopularSearches";
+import FeaturedJobs from "../components/homeComponents/FeaturedJobs";
+import JobCategories from "../components/homeComponents/JobCategories";
+import HowItWorks from "../components/homeComponents/HowItWorks";
+import JobSeekerSection from "../components/homeComponents/JobSeekerSection";
+import RecruiterSection from "../components/homeComponents/RecruiterSection";
+import StatsSection from "../components/homeComponents/StatsSection";
+import CTASection from "../components/homeComponents/CTASection";
 
 const jobs = [
   { id: 1, title: "Frontend Developer", company: "Northstar Labs", location: "Lahore, Pakistan", type: "Full-time", salary: "80k - 120k PKR", posted: "2 days ago", skills: ["React", "JavaScript", "Tailwind"], tone: "teal", mark: "N" },

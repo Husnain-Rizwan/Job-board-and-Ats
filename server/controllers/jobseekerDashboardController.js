@@ -48,7 +48,7 @@ const jobseekerApplications = async (req, res, next) => {
       .select("-resume -coverletter -statusHistory -__v")
       .populate({
         path: "job",
-        select: "title company",
+        select: "title company location employmentType",
         populate: {
           path: "company",
           select: "name"

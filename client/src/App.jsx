@@ -6,6 +6,8 @@ import JobDetails from "./pages/JobDetails";
 import CompanyProfile from "./pages/CompanyProfile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import MyApplications from "./pages/MyApplications";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -18,6 +20,9 @@ function App() {
         <Route path="/companies/:id" element={<CompanyProfile />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route element={<ProtectedRoute allowedRoles={["jobseeker"]} />}>
+          <Route path="/applications" element={<MyApplications />} />
+        </Route>
 
       </Routes>
     </BrowserRouter>

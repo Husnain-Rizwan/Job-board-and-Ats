@@ -15,8 +15,8 @@ const {
 const router = express.Router();
 
 // Public routes (Accessible to Jobseekers, recruiters, and visitors)
-router.get("", protect, getAllJobs); 
-router.get("/:id", protect, getJobById); 
+router.get("", getAllJobs);
+router.get("/:id", getJobById);
 
 // Protected routes (Recruiters only)
 router.post("/createJob", protect, authorize("recruiter"), createJob); 

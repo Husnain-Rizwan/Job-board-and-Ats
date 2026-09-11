@@ -65,8 +65,11 @@ const getAllJobs = async (req, res, next) => {
       location,
       employmentType,
       skills,
+      minExperience,
+      maxExperience,
       experience,
-      salary,
+      minSalary,
+      maxSalary,
       page = 1,
       limit = 10
     } = req.query;
@@ -92,7 +95,16 @@ const getAllJobs = async (req, res, next) => {
 
     // Employment type filter
     if (employmentType) {
-      filter.employmentType = employmentType;
+      const employmentTypes = employmentType
+        .split(",")
+        .map((type) => type.trim())
+        .filter(Boolean);
+
+      if (employmentTypes.length === 1) {
+        filter.employmentType = employmentTypes[0];
+      } else if (employmentTypes.length > 1) {
+        filter.employmentType = { $in: employmentTypes };
+      }
     }
 
     // Skills filter (handles single skill or comma-separated list)
@@ -102,7 +114,17 @@ const getAllJobs = async (req, res, next) => {
     }
 
     // Experience filter - range overlap
-if (experience && experience !== "any") {
+if (minExperience !== undefined || maxExperience !== undefined) {
+  const minimumExperience = Number(minExperience);
+  const maximumExperience = Number(maxExperience);
+
+  if (!Number.isNaN(maximumExperience)) {
+    filter["experience.min"] = { $lte: maximumExperience };
+  }
+  if (!Number.isNaN(minimumExperience)) {
+    filter["experience.max"] = { $gte: minimumExperience };
+  }
+} else if (experience && experience !== "any") {
   let minExp;
   let maxExp;
 
@@ -136,39 +158,40 @@ if (experience && experience !== "any") {
 }
 
 
-    // Salary filter - range overlap
-if (salary && salary !== "any") {
-  let minSalary;
-  let maxSalary;
+    // Salary filter - match jobs whose salary range overlaps the requested range.
+    const hasMinSalaryInput = minSalary !== undefined && minSalary !== "";
+    const hasMaxSalaryInput = maxSalary !== undefined && maxSalary !== "";
+    const parsedMinSalary = hasMinSalaryInput ? Number(minSalary) : undefined;
+    const parsedMaxSalary = hasMaxSalaryInput ? Number(maxSalary) : undefined;
+    const hasMinSalary = Number.isFinite(parsedMinSalary) && parsedMinSalary >= 0;
+    const hasMaxSalary = Number.isFinite(parsedMaxSalary) && parsedMaxSalary >= 0;
 
-  switch (salary) {
-    case "under-50000":
-      minSalary = 0;
-      maxSalary = 50000;
-      break;
+    if ((hasMinSalaryInput && !hasMinSalary) || (hasMaxSalaryInput && !hasMaxSalary)) {
+      return res.status(400).json({ message: "minSalary and maxSalary must be non-negative numbers" });
+    }
 
-    case "50000-100000":
-      minSalary = 50000;
-      maxSalary = 100000;
-      break;
+    if (hasMinSalary && hasMaxSalary && parsedMinSalary > parsedMaxSalary) {
+      return res.status(400).json({ message: "minSalary cannot be greater than maxSalary" });
+    }
 
-    case "100000-150000":
-      minSalary = 100000;
-      maxSalary = 150000;
-      break;
+    if (hasMinSalary || hasMaxSalary) {
+      const salaryConditions = [];
 
-    case "150000-plus":
-      minSalary = 150000;
-      break;
-  }
+      if (hasMaxSalary) {
+        salaryConditions.push({ "salary.min": { $lte: parsedMaxSalary } });
+      }
 
-  if (minSalary !== undefined && maxSalary !== undefined) {
-    filter["salary.min"] = { $lte: maxSalary };
-    filter["salary.max"] = { $gte: minSalary };
-  } else if (minSalary !== undefined) {
-    filter["salary.max"] = { $gte: minSalary };
-  }
-}
+      if (hasMinSalary) {
+        salaryConditions.push({
+          $or: [
+            { "salary.max": { $gte: parsedMinSalary } },
+            { "salary.max": null }
+          ]
+        });
+      }
+
+      filter.$and = [...(filter.$and || []), ...salaryConditions];
+    }
 
     // Pagination calculations
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -207,7 +230,9 @@ if (salary && salary !== "any") {
 // Get jobs by id /api/jobs/:id
 const getJobById= async(req, res, next) => {
     try{
-    const job = await Job.findById(req.params.id);
+    const job = await Job.findById(req.params.id)
+      .populate("company", "name location logo")
+      .populate("recruiter", "name email");
 
     if(!job){
         return res.status(404).json({

@@ -6,6 +6,7 @@ const upload = require("../middleware/uploadMiddleware");
 
 const { 
   createApplication,
+  uploadResume,
   getRecruiterApplications,
   getRecruiterApplicationById,
   updateApplicationStatus,
@@ -20,6 +21,7 @@ router.get("/statistics", protect, authorize("recruiter"), getRecruiterApplicati
 router.get("/:applicationId", protect, authorize("recruiter"), getRecruiterApplicationById);
 
 router.patch("/:applicationId/status", protect, authorize("recruiter"), updateApplicationStatus);
+router.post("/upload-resume", protect, authorize("jobseeker"), upload.single("resume"), uploadResume);
 router.post("/:jobId", protect, authorize("jobseeker"), upload.single("resume"), createApplication);
 
 module.exports = router;
