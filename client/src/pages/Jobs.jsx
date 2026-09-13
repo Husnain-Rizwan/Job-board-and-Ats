@@ -49,6 +49,7 @@ const Jobs = () => {
     async ({
       searchValue = "",
       locationValue = "",
+      categoryValue = "",
       filterValues = initialFilters,
       page = 1,
     } = {}) => {
@@ -59,6 +60,7 @@ const Jobs = () => {
         const params = {
           search: searchValue.trim(),
           location: locationValue.trim(),
+          category: categoryValue,
           page,
           limit: JOBS_PER_PAGE,
         };
@@ -99,6 +101,7 @@ const Jobs = () => {
       await fetchJobs({
         searchValue: searchParams.get("search") || "",
         locationValue: searchParams.get("location") || "",
+        categoryValue: searchParams.get("category") || "",
       });
     };
 

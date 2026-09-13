@@ -55,8 +55,9 @@ const RecruiterApplications = () => {
             : application,
         ),
       );
-      if (selectedApplication?._id === applicationId)
-        setSelectedApplication((current) => ({ ...current, status }));
+      if (selectedApplication?._id === applicationId) {
+        await viewApplicant(applicationId);
+      }
     } catch (requestError) {
       setError(
         requestError.response?.data?.message ||

@@ -17,6 +17,14 @@ const Login = () => {
     setForm((current) => ({ ...current, [name]: value }));
   };
 
+  const fillTestAccount = (role) => {
+    setError("");
+    setForm({
+      email: role === "jobseeker" ? "jobseeker@example.com" : "recruiter@example.com",
+      password: "123456",
+    });
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
@@ -43,6 +51,10 @@ const Login = () => {
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>Email<input type="email" name="email" value={form.email} onChange={updateField} placeholder="you@example.com" autoComplete="email" required /></label>
           <label>Password<input type="password" name="password" value={form.password} onChange={updateField} placeholder="Your password" autoComplete="current-password" required /></label>
+          <div className="test-account-actions" aria-label="Test account shortcuts">
+            <button type="button" onClick={() => fillTestAccount("jobseeker")}>Test for jobseeker</button>
+            <button type="button" onClick={() => fillTestAccount("recruiter")}>Test for recruiter</button>
+          </div>
           {error && <p className="auth-error" role="alert">{error}</p>}
           <button type="submit" className="auth-submit" disabled={submitting}>{submitting ? "Logging in..." : "Log In"}</button>
         </form>

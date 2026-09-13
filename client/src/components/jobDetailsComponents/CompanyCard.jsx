@@ -18,8 +18,10 @@ const CompanyCard = ({ company }) => {
           <p>{company?.location || "Location not specified"}</p>
         </div>
       </div>
+      {company?._id && <Link to={`/companies/${company._id}`} className="text-link">View company profile →</Link>}
     </section>
   );
 };
 
 export default CompanyCard;
+import { Link } from "react-router-dom";

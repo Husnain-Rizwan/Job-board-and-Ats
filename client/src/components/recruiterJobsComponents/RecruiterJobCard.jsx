@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-const RecruiterJobCard = ({ job, onEdit, onToggleStatus }) => {
+const RecruiterJobCard = ({ job, onEdit, onToggleStatus, changing }) => {
   const companyName = job.company?.name || "Company";
   const isActive = job.status === "active";
 
@@ -24,12 +24,12 @@ const RecruiterJobCard = ({ job, onEdit, onToggleStatus }) => {
         </div>
       </div>
       <div className="management-job-actions">
-        <button type="button" onClick={() => onEdit(job)}>
+        <button type="button" disabled={changing} onClick={() => onEdit(job)}>
           Edit
         </button>
         <Link to={`/recruiter/jobs/${job._id}/applications`}>Applicants</Link>
-        <button type="button" onClick={() => onToggleStatus(job)}>
-          {isActive ? "Deactivate" : "Activate"}
+        <button type="button" disabled={changing} onClick={() => onToggleStatus(job)}>
+          {changing ? "Updating..." : isActive ? "Deactivate" : "Activate"}
         </button>
       </div>
     </article>

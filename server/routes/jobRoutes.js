@@ -5,6 +5,7 @@ const authorize = require("../middleware/roleMiddleware")
 
 const {
   getAllJobs,
+  getJobCategories,
   getRecruiterJobs,
   createJob,
   getJobById,
@@ -17,6 +18,7 @@ const router = express.Router();
 
 // Public routes (Accessible to Jobseekers, recruiters, and visitors)
 router.get("/my-jobs", protect, authorize("recruiter"), getRecruiterJobs);
+router.get("/categories", getJobCategories);
 router.get("", getAllJobs);
 router.get("/:id", getJobById);
 

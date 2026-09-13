@@ -11,6 +11,9 @@ const QuickActions = () => (
       <Link to="/applications" className="secondary-button light-button">
         View Applications <span aria-hidden="true">→</span>
       </Link>
+      <Link to="/profile" className="secondary-button light-button">
+        My Profile
+      </Link>
     </div>
   </section>
 );

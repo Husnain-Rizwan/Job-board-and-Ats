@@ -16,6 +16,13 @@ const companySchema = new mongoose.Schema(
             maxLength: 2000
         },
 
+        industry: {
+          type: String,
+          default: null,
+          trim: true,
+          maxlength: 100
+        },
+
         logo: {
             type: String,
             default: null
@@ -36,8 +43,14 @@ const companySchema = new mongoose.Schema(
         recruiter: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "User",
-          required: true
+          required: true,
+          unique: true
         },
+
+        recruiters: [{
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User"
+        }],
     },
     {
         timestamps: true

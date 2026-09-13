@@ -6,20 +6,20 @@ const ArrowIcon = () => (
   </svg>
 );
 
-const JobCategories = ({ categories, categorySlug }) => (
+const JobCategories = ({ categories }) => (
   <section className="section-shell category-section">
     <div className="section-heading row-heading">
       <div>
         <p className="eyebrow">Discover more possibilities</p>
         <h2>Explore jobs by category</h2>
       </div>
-      <span className="section-label">08 categories</span>
+      <span className="section-label">{categories.length} categories</span>
     </div>
     <div className="category-grid">
       {categories.map((category, index) => (
-        <Link key={category} to={`/jobs?category=${categorySlug(category)}`}>
+        <Link key={category.name} to={`/jobs?category=${encodeURIComponent(category.name)}`}>
           <span>0{index + 1}</span>
-          <strong>{category}</strong>
+          <strong>{category.name} <small>({category.jobCount})</small></strong>
           <ArrowIcon />
         </Link>
       ))}

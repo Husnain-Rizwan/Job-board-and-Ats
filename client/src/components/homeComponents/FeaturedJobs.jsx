@@ -12,7 +12,22 @@ const ArrowIcon = () => (
   </svg>
 );
 
-const FeaturedJobs = ({ jobs }) => (
+const tones = ["teal", "lavender", "gold", "blue", "coral", "mint"];
+
+const formatSalary = (salary) => {
+  if (!salary || typeof salary.min !== "number") return "Salary not specified";
+  const currency = salary.currency || "PKR";
+  if (salary.max == null) return `${salary.min.toLocaleString()}+ ${currency}`;
+  return `${salary.min.toLocaleString()} - ${salary.max.toLocaleString()} ${currency}`;
+};
+
+const postedLabel = (createdAt) => {
+  const days = Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000));
+  if (days === 0) return "today";
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+};
+
+const FeaturedJobs = ({ jobs, loading, error }) => (
   <section className="featured-section">
     <div className="section-shell">
       <div className="section-heading row-heading">
@@ -25,12 +40,12 @@ const FeaturedJobs = ({ jobs }) => (
         </Link>
       </div>
       <div className="job-grid">
-        {jobs.map((job) => (
-          <article className="job-card" key={job.id}>
-            <Link to={`/jobs/${job.id}`} className="job-card-link">
-              <div className={`company-mark ${job.tone}`}>{job.mark}</div>
+        {loading ? <p className="home-jobs-message">Loading latest opportunities...</p> : error ? <p className="home-jobs-message">{error}</p> : jobs.length === 0 ? <p className="home-jobs-message">No active jobs available yet.</p> : jobs.map((job, index) => (
+          <article className="job-card" key={job._id}>
+            <Link to={`/jobs/${job._id}`} className="job-card-link">
+              <div className={`company-mark ${tones[index % tones.length]}`}>{job.company?.name?.charAt(0)?.toUpperCase() || "J"}</div>
               <p className="company-name">
-                {job.company}
+                {job.company?.name || "Company"}
                 <span className="verified">&#10003;</span>
               </p>
               <h3>{job.title}</h3>
@@ -41,19 +56,19 @@ const FeaturedJobs = ({ jobs }) => (
                 </span>
                 <span className="work-type">
                   <span>◆</span>
-                  {job.type}
+                  {job.employmentType}
                 </span>
               </div>
-              <p className="salary">{job.salary}</p>
+              <p className="salary">{formatSalary(job.salary)}</p>
               <div className="skills">
-                {job.skills.map((skill) => (
+                {(job.skills || []).slice(0, 3).map((skill) => (
                   <span key={skill}>{skill}</span>
                 ))}
               </div>
             </Link>
             <div className="job-bottom">
-              <span>Posted {job.posted}</span>
-              <Link to={`/jobs/${job.id}`} className="text-link">
+              <span>Posted {postedLabel(job.createdAt)}</span>
+              <Link to={`/jobs/${job._id}`} className="text-link">
                 View role <ArrowIcon />
               </Link>
             </div>

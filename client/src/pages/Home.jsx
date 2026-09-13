@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import HeroSection from "../components/homeComponents/HeroSection";
 import PopularSearches from "../components/homeComponents/PopularSearches";
@@ -9,81 +9,7 @@ import JobSeekerSection from "../components/homeComponents/JobSeekerSection";
 import RecruiterSection from "../components/homeComponents/RecruiterSection";
 import StatsSection from "../components/homeComponents/StatsSection";
 import CTASection from "../components/homeComponents/CTASection";
-
-const jobs = [
-  {
-    id: 1,
-    title: "Frontend Developer",
-    company: "Northstar Labs",
-    location: "Lahore, Pakistan",
-    type: "Full-time",
-    salary: "80k - 120k PKR",
-    posted: "2 days ago",
-    skills: ["React", "JavaScript", "Tailwind"],
-    tone: "teal",
-    mark: "N",
-  },
-  {
-    id: 2,
-    title: "Product Designer",
-    company: "Cedar & Co.",
-    location: "Remote - Worldwide",
-    type: "Full-time",
-    salary: "90k - 140k PKR",
-    posted: "3 days ago",
-    skills: ["Figma", "UX Research", "Prototyping"],
-    tone: "lavender",
-    mark: "C",
-  },
-  {
-    id: 3,
-    title: "Backend Engineer",
-    company: "Orbit Systems",
-    location: "Islamabad, Pakistan",
-    type: "Full-time",
-    salary: "100k - 160k PKR",
-    posted: "4 days ago",
-    skills: ["Node.js", "MongoDB", "APIs"],
-    tone: "gold",
-    mark: "O",
-  },
-  {
-    id: 4,
-    title: "Data Analyst",
-    company: "Morrow",
-    location: "Karachi, Pakistan",
-    type: "Hybrid",
-    salary: "75k - 115k PKR",
-    posted: "5 days ago",
-    skills: ["SQL", "Python", "Power BI"],
-    tone: "blue",
-    mark: "M",
-  },
-  {
-    id: 5,
-    title: "Mobile App Developer",
-    company: "Pixel Works",
-    location: "Remote - Pakistan",
-    type: "Full-time",
-    salary: "85k - 130k PKR",
-    posted: "6 days ago",
-    skills: ["React Native", "Firebase", "iOS"],
-    tone: "coral",
-    mark: "P",
-  },
-  {
-    id: 6,
-    title: "Growth Marketing Lead",
-    company: "Brightside",
-    location: "Lahore, Pakistan",
-    type: "Full-time",
-    salary: "90k - 135k PKR",
-    posted: "1 week ago",
-    skills: ["SEO", "Content", "Analytics"],
-    tone: "mint",
-    mark: "B",
-  },
-];
+import api from "../services/api";
 
 const popularSearches = [
   "Frontend Developer",
@@ -94,16 +20,6 @@ const popularSearches = [
   "Data Analyst",
   "Remote Jobs",
   "Internships",
-];
-const categories = [
-  "Software Development",
-  "Design",
-  "Data & Analytics",
-  "Mobile Development",
-  "Marketing",
-  "Business & Finance",
-  "Cybersecurity",
-  "DevOps & Cloud",
 ];
 const seekers = [
   "Build your profile",
@@ -125,6 +41,10 @@ const recruiters = [
 const Home = () => {
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("");
+  const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [jobsError, setJobsError] = useState("");
+  const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
 
   const handleSearch = (event) => {
@@ -137,8 +57,26 @@ const Home = () => {
 
   const searchFor = (term) =>
     navigate(`/jobs?search=${encodeURIComponent(term)}`);
-  const categorySlug = (category) =>
-    category.toLowerCase().replaceAll(" & ", "-").replaceAll(" ", "-");
+  useEffect(() => {
+    const loadLatestJobs = async () => {
+      try {
+        setJobsLoading(true);
+        const [response, categoriesResponse] = await Promise.all([
+          api.get("/jobs", { params: { page: 1, limit: 6 } }),
+          api.get("/jobs/categories"),
+        ]);
+        setJobs(Array.isArray(response.data?.jobs) ? response.data.jobs : []);
+        setCategories(Array.isArray(categoriesResponse.data?.categories) ? categoriesResponse.data.categories : []);
+      } catch (requestError) {
+        console.error("Unable to load home page jobs:", requestError);
+        setJobsError("Latest jobs are unavailable right now.");
+      } finally {
+        setJobsLoading(false);
+      }
+    };
+
+    void loadLatestJobs();
+  }, []);
 
   return (
     <main className="home-page">
@@ -150,8 +88,8 @@ const Home = () => {
         onSearch={handleSearch}
       />
       <PopularSearches searches={popularSearches} onSearch={searchFor} />
-      <FeaturedJobs jobs={jobs} />
-      <JobCategories categories={categories} categorySlug={categorySlug} />
+      <FeaturedJobs jobs={jobs} loading={jobsLoading} error={jobsError} />
+      <JobCategories categories={categories} />
       <HowItWorks />
       <section className="section-shell audience-section">
         <JobSeekerSection benefits={seekers} />

@@ -10,6 +10,7 @@ const RecruiterJobs = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [changingJobId, setChangingJobId] = useState(null);
   const [error, setError] = useState("");
 
   const fetchJobs = useCallback(async () => {
@@ -55,7 +56,10 @@ const RecruiterJobs = () => {
   };
   
   const toggleStatus = async (job) => {
+    const deactivating = job.status === "active";
+    if (deactivating && !window.confirm(`Deactivate “${job.title}”? Candidates will no longer be able to apply.`)) return;
     try {
+      setChangingJobId(job._id);
       setError("");
       await api.patch(`/jobs/${job._id}/status`, {
         status: job.status === "active" ? "inactive" : "active",
@@ -66,6 +70,8 @@ const RecruiterJobs = () => {
       setError(
         requestError.response?.data?.message || "Unable to change job status.",
       );
+    } finally {
+      setChangingJobId(null);
     }
   };
 
@@ -88,6 +94,7 @@ const RecruiterJobs = () => {
               setFormOpen(true);
             }}
             onToggleStatus={toggleStatus}
+            changingJobId={changingJobId}
           />
         )}
       </div>

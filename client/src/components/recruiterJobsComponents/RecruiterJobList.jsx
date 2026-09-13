@@ -1,6 +1,6 @@
 import RecruiterJobCard from "./RecruiterJobCard";
 
-const RecruiterJobList = ({ jobs, onEdit, onToggleStatus }) => (
+const RecruiterJobList = ({ jobs, onEdit, onToggleStatus, changingJobId }) => (
   <section className="management-list">
     {jobs.length ? (
       jobs.map((job, index) => (
@@ -9,6 +9,7 @@ const RecruiterJobList = ({ jobs, onEdit, onToggleStatus }) => (
           job={job}
           onEdit={onEdit}
           onToggleStatus={onToggleStatus}
+          changing={changingJobId === job._id}
         />
       ))
     ) : (

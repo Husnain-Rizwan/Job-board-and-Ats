@@ -5,6 +5,7 @@ const emptyForm = {
   description: "",
   location: "",
   employmentType: "Full-time",
+  category: "Software Development",
   salaryMin: "",
   salaryMax: "",
   currency: "PKR",
@@ -21,6 +22,7 @@ const formFromJob = (job) =>
         description: job.description || "",
         location: job.location || "",
         employmentType: job.employmentType || "Full-time",
+        category: job.category || "Other",
         salaryMin: job.salary?.min ?? "",
         salaryMax: job.salary?.max ?? "",
         currency: job.salary?.currency || "PKR",
@@ -46,6 +48,7 @@ const JobForm = ({ job, onSubmit, onClose, submitting }) => {
       description: form.description,
       location: form.location,
       employmentType: form.employmentType,
+      category: form.category,
       salary: {
         min: Number(form.salaryMin),
         max: form.salaryMax === "" ? null : Number(form.salaryMax),
@@ -91,8 +94,8 @@ const JobForm = ({ job, onSubmit, onClose, submitting }) => {
           />
         </label>
         <div className="form-two-col">
-          <label>
-            Employment type
+            <label>
+              Employment type
             <select
               name="employmentType"
               value={form.employmentType}
@@ -108,7 +111,13 @@ const JobForm = ({ job, onSubmit, onClose, submitting }) => {
                 <option key={type}>{type}</option>
               ))}
             </select>
-          </label>
+            </label>
+            <label>
+              Category
+              <select name="category" value={form.category} onChange={update}>
+                <option>Software Development</option><option>Design</option><option>Data & Analytics</option><option>Mobile Development</option><option>Marketing</option><option>Business & Finance</option><option>Cybersecurity</option><option>DevOps & Cloud</option><option>Other</option>
+              </select>
+            </label>
           <label>
             Currency
             <input

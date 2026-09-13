@@ -1,106 +1,126 @@
 const Company = require("../models/Company");
+const Job = require("../models/Job");
 
-// create Company
-const createCompany = async( req, res) => {
-try{
-  const {name, description, logo, website, location } = req.body;
+const companyFields = ["name", "description", "industry", "location", "website", "logo"];
+const companyMemberFilter = (recruiterId) => ({
+  $or: [{ recruiter: recruiterId }, { recruiters: recruiterId }],
+});
 
-  const company = await Company.create({
-    name,
-    description, 
-    logo, 
-    website, 
-    location,
-    recruiter: req.user._id
-  });
+const createCompany = async (req, res, next) => {
+  try {
+    const existingCompany = await Company.findOne(companyMemberFilter(req.user._id));
+    if (existingCompany) return res.status(409).json({ message: "You already have a company profile" });
 
-  res.status(201).json({
-    message: "Compant added successfully",
-    company
-  });
-} catch(error) {
-  res.status(500).json({
-    message: "error while creating Company",
-    error: error.message
-  })
-};
-};
-
-// Get company details
-const getCompanyById = async(req, res, next) => {
-  try{
-    const company = await Company.findById(req.params.id);
-
-    if(!company){
-      return res.status(404).json({message: "company not Found"});
-    }
-
-    res.status(200).json({
-      success: true,
-      company
-    })
-
-  }catch(error){
+    const companyData = Object.fromEntries(Object.entries(req.body).filter(([field]) => companyFields.includes(field)));
+    const company = await Company.create({ ...companyData, recruiter: req.user._id, recruiters: [req.user._id] });
+    await company.populate("recruiters", "name email professionalTitle phone");
+    res.status(201).json({ success: true, message: "Company created successfully", company });
+  } catch (error) {
+    if (error.code === 11000) return res.status(409).json({ message: "You already have a company profile" });
     next(error);
   }
 };
 
-// update compant details by api endpoint /api/companies/:_id
-// PUT /api/companies/:id (Update Company)
+const getMyCompany = async (req, res, next) => {
+  try {
+    const company = await Company.findOne(companyMemberFilter(req.user._id));
+    if (company && !company.recruiters.some((memberId) => memberId.equals(company.recruiter))) {
+      company.recruiters.push(company.recruiter);
+      await company.save();
+    }
+    if (company) await company.populate("recruiters", "name email professionalTitle phone");
+    res.status(200).json({ success: true, company });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateMyCompany = async (req, res, next) => {
+  try {
+    const updates = Object.fromEntries(Object.entries(req.body).filter(([field]) => companyFields.includes(field)));
+    const company = await Company.findOneAndUpdate(companyMemberFilter(req.user._id), updates, { new: true, runValidators: true });
+    if (!company) return res.status(404).json({ message: "Company profile not found" });
+    await company.populate("recruiters", "name email professionalTitle phone");
+    res.status(200).json({ success: true, message: "Company profile updated successfully", company });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getCompanyById = async (req, res, next) => {
+  try {
+    const company = await Company.findById(req.params.id).select("name description industry location website logo");
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    res.status(200).json({ success: true, company });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getCompanyJobs = async (req, res, next) => {
+  try {
+    const company = await Company.findById(req.params.id).select("_id");
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    const jobs = await Job.find({ company: company._id, status: "active" })
+      .select("title location employmentType salary experience skills deadline createdAt")
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, jobs });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateCompany = async (req, res, next) => {
   try {
-    let company = await Company.findById(req.params.id);
-
-    if (!company) {
-      return res.status(404).json({ message: "Company not found" });
-    }
-
-    // Authorization check: Ensure logged-in recruiter owns this company profile
-    if (company.recruiter.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized to update this company profile" });
-    }
-
-    company = await Company.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
-
-    res.status(200).json({
-      message: "Company profile updated successfully",
-      company
-    });
+    const company = await Company.findOneAndUpdate({ _id: req.params.id, recruiter: req.user._id }, req.body, { new: true, runValidators: true });
+    if (!company) return res.status(404).json({ message: "Company not found or not authorized" });
+    res.status(200).json({ message: "Company profile updated successfully", company });
   } catch (error) {
     next(error);
   }
 };
 
-// DELETE /api/companies/:id (Delete Company)
+const addRecruiter = async (req, res, next) => {
+  try {
+    const email = req.body.email?.trim().toLowerCase();
+    if (!email) return res.status(400).json({ message: "Recruiter's work email is required" });
+
+    const company = await Company.findOne(companyMemberFilter(req.user._id));
+    if (!company) return res.status(404).json({ message: "Company profile not found" });
+
+    const User = require("../models/User");
+    const recruiter = await User.findOne({ email, role: "recruiter" });
+    if (!recruiter) return res.status(404).json({ message: "No recruiter account exists with this email" });
+
+    const alreadyLinked = await Company.findOne({
+      _id: { $ne: company._id },
+      ...companyMemberFilter(recruiter._id),
+    });
+    if (alreadyLinked) return res.status(409).json({ message: "This recruiter is already linked to another company" });
+
+    if (!company.recruiters.some((memberId) => memberId.equals(company.recruiter))) {
+      company.recruiters.push(company.recruiter);
+    }
+    if (!company.recruiters.some((memberId) => memberId.equals(recruiter._id))) {
+      company.recruiters.push(recruiter._id);
+      await company.save();
+    }
+
+    await company.populate("recruiters", "name email professionalTitle phone");
+    res.status(200).json({ success: true, message: "Recruiter added to your company", company });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteCompany = async (req, res, next) => {
   try {
-    const company = await Company.findById(req.params.id);
-
-    if (!company) {
-      return res.status(404).json({ message: "Company not found" });
-    }
-
-    // Authorization check: Ensure logged-in recruiter owns this company profile
-    if (company.recruiter.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized to delete this company profile" });
-    }
-
-    await company.deleteOne();
-
-    res.status(200).json({
-      message: "Company deleted successfully"
-    });
+    const company = await Company.findOneAndDelete({ _id: req.params.id, recruiter: req.user._id });
+    if (!company) return res.status(404).json({ message: "Company not found or not authorized" });
+    res.status(200).json({ message: "Company deleted successfully" });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = {
-  createCompany,
-  getCompanyById,
-  updateCompany,
-  deleteCompany
-};
+module.exports = { createCompany, getMyCompany, updateMyCompany, getCompanyById, getCompanyJobs, updateCompany, deleteCompany, addRecruiter };

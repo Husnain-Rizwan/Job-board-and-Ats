@@ -1,6 +1,12 @@
 const Application = require("../models/Application");
 const Job = require("../models/Job");
 const mongoose = require("mongoose");
+const { getMissingProfileFields, hasCompletedJobseekerProfile } = require("../utils/profileCompletion");
+const {
+  getSignedResumeUrl,
+  resumeMetadata,
+  uploadApplicationResume,
+} = require("../utils/resumeCloudinary");
 
 const APPLICATION_STATUSES = [
   "applied",
@@ -10,46 +16,24 @@ const APPLICATION_STATUSES = [
   "rejected",
 ];
 
-const uploadResumeToCloudinary = async (file, userId) => {
-  const cloudinary = require("../config/cloudinary");
-
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: "job-board/resumes",
-        resource_type: "image",
-        type: "authenticated",
-        public_id: `${userId}_${Date.now()}`,
-      },
-      (error, result) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result);
-        }
-      },
-    );
-
-    uploadStream.end(file.buffer);
-  });
-};
-
 const uploadResume = async (req, res, next) => {
   try {
+    if (!hasCompletedJobseekerProfile(req.user)) {
+      return res.status(403).json({
+        success: false,
+        message: `Complete your profile before applying. Missing: ${getMissingProfileFields(req.user).join(", ")}.`,
+      });
+    }
     if (!req.file) {
       return res
         .status(400)
         .json({ success: false, message: "Resume is required" });
     }
 
-    const uploadResult = await uploadResumeToCloudinary(req.file, req.user._id);
+    const uploadResult = await uploadApplicationResume(req.file, req.user._id);
     res.status(201).json({
       success: true,
-      resume: { 
-        url: uploadResult.secure_url, 
-        publicId: uploadResult.public_id, 
-        filename: req.file.originalname 
-      },
+      resume: resumeMetadata(uploadResult, req.file.originalname),
     });
   } catch (error) {
     next(error);
@@ -86,18 +70,21 @@ const createApplication = async (req, res, next) => {
     const { jobId } = req.params;
     const { coverletter, resume } = req.body;
 
+    if (!hasCompletedJobseekerProfile(req.user)) {
+      return res.status(403).json({
+        success: false,
+        message: `Complete your profile before applying. Missing: ${getMissingProfileFields(req.user).join(", ")}.`,
+      });
+    }
+
     // Accept the preferred uploaded-resume metadata, plus the existing multipart fallback.
     let applicationResume = resume;
     if (!applicationResume && req.file) {
-      const uploadResult = await uploadResumeToCloudinary(
+      const uploadResult = await uploadApplicationResume(
         req.file,
         req.user._id,
       );
-      applicationResume = {
-        url: uploadResult.secure_url,
-        publicId: uploadResult.public_id,
-        filename: req.file.originalname,
-      };
+      applicationResume = resumeMetadata(uploadResult, req.file.originalname);
     }
 
     if (!applicationResume?.url || !applicationResume?.filename) {
@@ -193,18 +180,7 @@ const getApplicationResume = async (req, res, next) => {
       });
     }
 
-    const cloudinary = require("../config/cloudinary");
-
-    const signedUrl = cloudinary.url(
-      application.resume.publicId,
-      {
-        resource_type: "image",
-        type: "authenticated",
-        secure: true,
-        sign_url: true,
-        expires_at: Math.floor(Date.now() / 1000) + 300
-      }
-    );
+    const signedUrl = getSignedResumeUrl(application.resume);
 
     res.status(200).json({
       success: true,
@@ -395,10 +371,10 @@ const updateApplicationStatus = async (req, res, next) => {
     // Validate new status
     // --------------------------------------------------
 
-    if (!APPLICATION_STATUSES.includes(status)) {
+    if (!APPLICATION_STATUSES.includes(status) || status === "applied") {
       return res.status(400).json({
         success: false,
-        message: `Status must be one of: ${APPLICATION_STATUSES.join(", ")}`,
+        message: "Recruiters can set status to shortlisted, interview, selected, or rejected",
       });
     }
 

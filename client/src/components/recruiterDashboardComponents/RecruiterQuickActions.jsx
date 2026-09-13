@@ -19,6 +19,12 @@ const RecruiterQuickActions = () => (
       >
         Review Candidates <span aria-hidden="true">→</span>
       </Link>
+      <Link to="/recruiter/company" className="secondary-button light-button">
+        Manage Company
+      </Link>
+      <Link to="/recruiter/profile" className="secondary-button light-button">
+        My Recruiter Profile
+      </Link>
     </div>
   </section>
 );

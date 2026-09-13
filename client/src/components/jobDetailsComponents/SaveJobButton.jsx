@@ -57,6 +57,10 @@ const SaveJobButton = ({ jobId, user, authLoading }) => {
       setLoading(true);
       setMessage("");
       if (saved) {
+        if (!window.confirm("Remove this job from your saved jobs?")) {
+          setLoading(false);
+          return;
+        }
         await api.delete(`/savedJobs/${jobId}`);
         setSaved(false);
       } else {

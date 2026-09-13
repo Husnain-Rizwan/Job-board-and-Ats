@@ -9,6 +9,7 @@ const createJob = async (req, res) => {
             description,
             location,
             employmentType,
+            category,
             skills,
             salary,
             experience,
@@ -16,7 +17,7 @@ const createJob = async (req, res) => {
         } = req.body;
 
         const company = await Company.findOne({
-            recruiter: req.user._id
+            $or: [{ recruiter: req.user._id }, { recruiters: req.user._id }]
         });
 
         // check whether recruiter belongs to a company or not
@@ -26,10 +27,6 @@ const createJob = async (req, res) => {
           });
         }
 
-        if (company.recruiter.toString() !== req.user._id.toString()) {
-        return res.status(403).json({ message: "Not authorized to post jobs for this company" });
-        }
-
         const job = await Job.create({
             title,
             description,
@@ -37,6 +34,7 @@ const createJob = async (req, res) => {
             recruiter: req.user._id,
             location,
             employmentType,
+            category,
             skills,
             salary,
             experience,
@@ -64,6 +62,7 @@ const getAllJobs = async (req, res, next) => {
       search,
       location,
       employmentType,
+      category,
       skills,
       minExperience,
       maxExperience,
@@ -104,6 +103,17 @@ const getAllJobs = async (req, res, next) => {
         filter.employmentType = employmentTypes[0];
       } else if (employmentTypes.length > 1) {
         filter.employmentType = { $in: employmentTypes };
+      }
+    }
+
+    if (category) {
+      if (category === "Other") {
+        filter.$and = [
+          ...(filter.$and || []),
+          { $or: [{ category: "Other" }, { category: { $exists: false } }] },
+        ];
+      } else {
+        filter.category = category;
       }
     }
 
@@ -221,6 +231,24 @@ if (minExperience !== undefined || maxExperience !== undefined) {
       totalPages,
       currentPage: pageNum,
       jobs
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getJobCategories = async (req, res, next) => {
+  try {
+    const categories = await Job.aggregate([
+      { $match: { status: "active" } },
+      { $project: { category: { $ifNull: ["$category", "Other"] } } },
+      { $group: { _id: "$category", jobCount: { $sum: 1 } } },
+      { $sort: { jobCount: -1, _id: 1 } },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      categories: categories.map(({ _id, jobCount }) => ({ name: _id, jobCount })),
     });
   } catch (error) {
     next(error);
@@ -350,6 +378,7 @@ const getRecruiterJobs = async (req, res, next) => {
 
  module.exports = {
     getAllJobs,
+  getJobCategories,
   getRecruiterJobs,
     createJob,
     getJobById,

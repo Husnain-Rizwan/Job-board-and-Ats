@@ -10,6 +10,7 @@ const CreateJob = () => {
     description: "",
     location: "",
     employmentType: "Full-time",
+    category: "Software Development",
     skills: "",
     salaryMin: "",
     salaryMax: "",
@@ -46,6 +47,7 @@ const CreateJob = () => {
         description: formData.description,
         location: formData.location,
         employmentType: formData.employmentType,
+        category: formData.category,
         skills: formattedSkills,
         salary: {
           min: Number(formData.salaryMin),
@@ -139,6 +141,14 @@ const CreateJob = () => {
                   <option value="Temporary">Temporary</option>
                 </select>
               </div>
+            </div>
+
+            {/* Salary */}
+            <div className="form-group">
+              <label htmlFor="category">Job Category *</label>
+              <select id="category" name="category" value={formData.category} onChange={handleChange} className="form-input">
+                <option>Software Development</option><option>Design</option><option>Data & Analytics</option><option>Mobile Development</option><option>Marketing</option><option>Business & Finance</option><option>Cybersecurity</option><option>DevOps & Cloud</option><option>Other</option>
+              </select>
             </div>
 
             {/* Salary */}

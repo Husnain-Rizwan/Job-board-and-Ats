@@ -46,6 +46,22 @@ const jobSchema = new mongoose.Schema(
       ]
     },
 
+    category: {
+      type: String,
+      enum: [
+        "Software Development",
+        "Design",
+        "Data & Analytics",
+        "Mobile Development",
+        "Marketing",
+        "Business & Finance",
+        "Cybersecurity",
+        "DevOps & Cloud",
+        "Other"
+      ],
+      default: "Other"
+    },
+
     salary: {
       min: {
         type: Number,

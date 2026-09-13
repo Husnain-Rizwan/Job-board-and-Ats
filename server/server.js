@@ -13,6 +13,8 @@ const savedJobRoutes = require("./routes/savedJobRoutes")
 const applicationRoutes = require("./routes/applicationRoutes")
 const recruiterDashboardRoutes = require("./routes/recruiterDashboardRoutes");
 const jobseekerDashboardRoutes = require("./routes/jobseekerDashboardRoutes")
+const profileRoutes = require("./routes/profileRoutes");
+const recruiterProfileRoutes = require("./routes/recruiterProfileRoutes");
 
 const connectDB = require("./config/db");
 
@@ -41,6 +43,8 @@ app.use("/api/savedJobs", savedJobRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/recruiter/dashboard", recruiterDashboardRoutes);
 app.use("/api/jobseeker/dashboard", jobseekerDashboardRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/recruiter/profile", recruiterProfileRoutes);
 
 app.get("/api/test", (req, res) => {
   res.json({
@@ -52,6 +56,10 @@ app.get("/", (req, res) => {
     res.json({
         message: "Job Board API is running"
     });
+});
+
+app.use((req, res) => {
+  res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
 });
 
 const PORT = process.env.PORT || 5000;

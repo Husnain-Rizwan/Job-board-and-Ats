@@ -14,6 +14,7 @@ const JobSidebar = ({ jobId, user, authLoading }) => {
   const [showApplication, setShowApplication] = useState(false);
   const [applied, setApplied] = useState(false);
   const [checkingApplication, setCheckingApplication] = useState(false);
+  const [profileComplete, setProfileComplete] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,13 +23,18 @@ const JobSidebar = ({ jobId, user, authLoading }) => {
     if (!user || user.role !== "jobseeker") {
       setApplied(false);
       setShowApplication(false);
+      setProfileComplete(null);
       return;
     }
 
     const checkApplication = async () => {
       try {
         setCheckingApplication(true);
-        const response = await api.get("/jobseeker/dashboard/applications");
+        const [response, profileResponse] = await Promise.all([
+          api.get("/jobseeker/dashboard/applications"),
+          api.get("/profile/completion"),
+        ]);
+        setProfileComplete(Boolean(profileResponse.data?.complete));
         const applications = Array.isArray(response.data?.applications)
           ? response.data.applications
           : [];
@@ -45,6 +51,7 @@ const JobSidebar = ({ jobId, user, authLoading }) => {
       } catch (error) {
         console.error("Unable to check application status:", error);
         setApplied(false);
+        setProfileComplete(false);
       } finally {
         setCheckingApplication(false);
       }
@@ -58,6 +65,13 @@ const JobSidebar = ({ jobId, user, authLoading }) => {
 
     if (!user) {
       navigate("/login");
+      return;
+    }
+
+    if (user.role !== "jobseeker") return;
+
+    if (!profileComplete) {
+      navigate("/profile");
       return;
     }
 
@@ -93,7 +107,9 @@ const JobSidebar = ({ jobId, user, authLoading }) => {
             ) : authLoading ? (
               "Checking session..."
             ) : checkingApplication ? (
-              "Checking application..."
+              "Checking profile..."
+            ) : profileComplete === false ? (
+              "Complete Profile to Apply"
             ) : (
               <>
                 Apply Now <ArrowIcon />
