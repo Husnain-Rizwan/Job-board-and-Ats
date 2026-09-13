@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ApplyJob from "./ApplyJob";
 import SaveJobButton from "./SaveJobButton";
+import api from "../../services/api";
 
 const ArrowIcon = () => (
   <svg viewBox="0 0 24 24" className="icon small-icon" aria-hidden="true">
@@ -12,7 +13,45 @@ const ArrowIcon = () => (
 const JobSidebar = ({ jobId, user, authLoading }) => {
   const [showApplication, setShowApplication] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [checkingApplication, setCheckingApplication] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user || user.role !== "jobseeker") {
+      setApplied(false);
+      setShowApplication(false);
+      return;
+    }
+
+    const checkApplication = async () => {
+      try {
+        setCheckingApplication(true);
+        const response = await api.get("/jobseeker/dashboard/applications");
+        const applications = Array.isArray(response.data?.applications)
+          ? response.data.applications
+          : [];
+        setApplied(
+          applications.some((application) => {
+            const applicationJob = application.job;
+            const applicationJobId =
+              typeof applicationJob === "string"
+                ? applicationJob
+                : applicationJob?._id;
+            return applicationJobId === jobId;
+          }),
+        );
+      } catch (error) {
+        console.error("Unable to check application status:", error);
+        setApplied(false);
+      } finally {
+        setCheckingApplication(false);
+      }
+    };
+
+    checkApplication();
+  }, [authLoading, jobId, user]);
 
   const handleApplyClick = () => {
     if (authLoading) return;
@@ -22,7 +61,7 @@ const JobSidebar = ({ jobId, user, authLoading }) => {
       return;
     }
 
-    setShowApplication(true);
+    if (!applied) setShowApplication(true);
   };
 
   return (
@@ -36,19 +75,25 @@ const JobSidebar = ({ jobId, user, authLoading }) => {
             setApplied(true);
             setShowApplication(false);
           }}
+          onAlreadyApplied={() => {
+            setApplied(true);
+            setShowApplication(false);
+          }}
         />
       ) : (
         <>
           <button
             type="button"
-            className="details-apply"
+            className={`details-apply${applied ? " details-apply-applied" : ""}`}
             onClick={handleApplyClick}
-            disabled={applied || authLoading}
+            disabled={applied || authLoading || checkingApplication}
           >
             {applied ? (
               "✓ Applied"
             ) : authLoading ? (
               "Checking session..."
+            ) : checkingApplication ? (
+              "Checking application..."
             ) : (
               <>
                 Apply Now <ArrowIcon />

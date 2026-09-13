@@ -13,6 +13,11 @@ const RecruiterApplicationCard = ({ application }) => {
   const job = application.job || {};
   const status = application.status || "applied";
 
+  // Derive target URL: Navigate directly to the job's candidate applications page
+  const targetRoute = job._id 
+    ? `/recruiter/jobs/${job._id}/applications` 
+    : "/recruiter/jobs";
+
   return (
     <article className="recruiter-application-card">
       <div>
@@ -28,7 +33,7 @@ const RecruiterApplicationCard = ({ application }) => {
           {statusLabels[status] || "Applied"}
         </span>
       </div>
-      <Link to="/recruiter/applications" className="text-link">
+      <Link to={targetRoute} className="text-link">
         Review <span aria-hidden="true">→</span>
       </Link>
     </article>

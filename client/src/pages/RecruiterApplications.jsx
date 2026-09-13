@@ -17,11 +17,11 @@ const RecruiterApplications = () => {
     try {
       setLoading(true);
       setError("");
-      const [jobResponse, applicationsResponse] = await Promise.all([
-        api.get(`/jobs/${jobId}`),
-        api.get(`/applications?jobId=${jobId}`),
-      ]);
-      setJob(jobResponse.data?.job || null);
+      const requests = jobId
+        ? [api.get(`/jobs/${jobId}`), api.get(`/applications?jobId=${jobId}`)]
+        : [Promise.resolve(null), api.get("/applications")];
+      const [jobResponse, applicationsResponse] = await Promise.all(requests);
+      setJob(jobResponse?.data?.job || null);
       setApplications(
         Array.isArray(applicationsResponse.data?.applications)
           ? applicationsResponse.data.applications
@@ -84,12 +84,12 @@ const RecruiterApplications = () => {
         <p>Loading applicants...</p>
       </main>
     );
-  if (error && !job)
+  if (error && (jobId ? !job : !applications.length))
     return (
       <main className="recruiter-applications-page application-manager-state">
         <h1>{error}</h1>
-        <Link to="/recruiter/jobs" className="secondary-button dark-button">
-          Back to Jobs
+        <Link to="/recruiter/dashboard" className="secondary-button dark-button">
+          Back to Dashboard
         </Link>
       </main>
     );
@@ -97,7 +97,7 @@ const RecruiterApplications = () => {
   return (
     <main className="recruiter-applications-page">
       <div className="section-shell recruiter-applications-shell">
-        <Link to="/recruiter/jobs" className="details-back-link">
+        <Link to={jobId ? "/recruiter/jobs" : "/recruiter/dashboard"} className="details-back-link">
           ← Back to my jobs
         </Link>
         <header className="applicants-header">

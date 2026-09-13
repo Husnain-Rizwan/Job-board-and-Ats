@@ -132,6 +132,7 @@ h1 { max-width: 820px; margin-bottom: 25px; font-size: clamp(54px, 8vw, 105px); 
 .details-apply { color: #fff; background: #142b35; }
 .details-apply:hover { background: #209582; }
 .details-apply:disabled { opacity: .8; cursor: default; }
+.details-apply.details-apply-applied:hover { background: #142b35; }
 .details-save { margin-top: 10px; color: #142b35; border: 1px solid #142b35; background: transparent; }
 .details-save:hover { color: #e8d6a9; background: #142b35; }
 .details-save span { font-size: 21px; line-height: 1; }
@@ -322,6 +323,16 @@ h1 { max-width: 820px; margin-bottom: 25px; font-size: clamp(54px, 8vw, 105px); 
 .job-status-inactive { color: #a64436; background: #fff0ed; }
 .recruiter-job-card { grid-template-columns: minmax(0, 1fr) auto; }
 .recruiter-quick-actions { margin-top: 70px; }
+.create-job-shell > .dashboard-section-heading { margin-bottom: 25px; }
+.create-job-card { width: min(100%, 760px); padding: 34px; margin: 0 auto; background: #fff; box-shadow: 0 8px 20px rgba(20,43,53,.05); }
+.create-job-form { display: grid; gap: 18px; }
+.create-job-form .form-group { display: grid; gap: 7px; }
+.create-job-form label { color: #142b35; font-size: 12px; font-weight: 700; }
+.create-job-form .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.create-job-form .form-input { width: 100%; padding: 11px 12px; color: #142b35; border: 1px solid #cbd8d2; outline: 0; background: #fbfcfa; font-size: 13px; }
+.create-job-form .form-input:focus { border-color: #209582; background: #fff; }
+.create-job-form textarea.form-input { resize: vertical; }
+.create-job-form .form-actions { display: flex; justify-content: end; margin-top: 7px; }
 
 @media (max-width: 900px) {
 	.recruiter-dashboard-grid { grid-template-columns: 1fr; }
@@ -332,6 +343,8 @@ h1 { max-width: 820px; margin-bottom: 25px; font-size: clamp(54px, 8vw, 105px); 
 	.recruiter-application-card { grid-template-columns: 1fr; gap: 13px; }
 	.recruiter-application-card .text-link { justify-self: start; }
 	.recruiter-job-card { padding: 18px; }
+	.create-job-card { padding: 24px 20px; }
+	.create-job-form .form-row { grid-template-columns: 1fr; }
 }
 
 .management-page { min-height: 100vh; background: #edf2ef; }

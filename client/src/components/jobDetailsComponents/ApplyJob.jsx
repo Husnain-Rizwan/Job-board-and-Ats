@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
-const ApplyJob = ({ jobId, user, onClose, onSubmitted }) => {
+const ApplyJob = ({ jobId, user, onClose, onSubmitted, onAlreadyApplied }) => {
   const navigate = useNavigate();
   const [resume, setResume] = useState(null);
   const [uploadingResume, setUploadingResume] = useState(false);
@@ -67,6 +67,10 @@ const ApplyJob = ({ jobId, user, onClose, onSubmitted }) => {
       onSubmitted();
     } catch (error) {
       console.error(error);
+      if (error.response?.status === 409) {
+        onAlreadyApplied();
+        return;
+      }
       setMessage(
         error.response?.data?.message || "Unable to submit your application.",
       );

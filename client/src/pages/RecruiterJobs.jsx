@@ -35,10 +35,6 @@ const RecruiterJobs = () => {
     loadJobs();
   }, [fetchJobs]);
 
-  const openCreate = () => {
-    setEditingJob(null);
-    setFormOpen(true);
-  };
   const submitJob = async (jobData) => {
     try {
       setSubmitting(true);
@@ -76,7 +72,7 @@ const RecruiterJobs = () => {
   return (
     <main className="management-page">
       <div className="section-shell management-shell">
-        <JobManagementHeader onCreate={openCreate} />
+        <JobManagementHeader />
         {error && (
           <p className="management-error" role="alert">
             {error}
