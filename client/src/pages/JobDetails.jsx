@@ -24,7 +24,9 @@ const JobDetails = () => {
       setJob(response.data?.job || null);
     } catch (requestError) {
       console.error(requestError);
-      setError(requestError.response?.data?.message || "Failed to load this job.");
+      setError(
+        requestError.response?.data?.message || "Failed to load this job.",
+      );
     } finally {
       setLoading(false);
     }
@@ -38,12 +40,41 @@ const JobDetails = () => {
     loadJob();
   }, [fetchJob]);
 
-  if (loading) return <main className="job-details-page details-state"><p>Loading job details...</p></main>;
-  if (error || !job) return <main className="job-details-page details-state"><h1>{error || "Job not found"}</h1><Link to="/jobs" className="details-back-link">Back to jobs</Link></main>;
+  if (loading)
+    return (
+      <main className="job-details-page details-state">
+        <p>Loading job details...</p>
+      </main>
+    );
+  if (error || !job)
+    return (
+      <main className="job-details-page details-state">
+        <h1>{error || "Job not found"}</h1>
+        <Link to="/jobs" className="details-back-link">
+          Back to jobs
+        </Link>
+      </main>
+    );
 
   return (
     <main className="job-details-page">
-      <div className="section-shell details-shell"><Link to="/jobs" className="details-back-link">← Back to jobs</Link><JobHeader job={job} /><div className="details-layout"><div className="details-main"><JobDescription description={job.description} /><JobSkills skills={job.skills} /></div><aside className="details-side"><JobSidebar jobId={job._id} user={user} authLoading={authLoading} /><JobOverview job={job} /><CompanyCard company={job.company} /></aside></div></div>
+      <div className="section-shell details-shell">
+        <Link to="/jobs" className="details-back-link">
+          ← Back to jobs
+        </Link>
+        <JobHeader job={job} />
+        <div className="details-layout">
+          <div className="details-main">
+            <JobDescription description={job.description} />
+            <JobSkills skills={job.skills} />
+          </div>
+          <aside className="details-side">
+            <JobSidebar jobId={job._id} user={user} authLoading={authLoading} />
+            <JobOverview job={job} />
+            <CompanyCard company={job.company} />
+          </aside>
+        </div>
+      </div>
     </main>
   );
 };

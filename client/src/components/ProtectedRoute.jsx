@@ -6,7 +6,11 @@ const ProtectedRoute = ({ allowedRoles }) => {
   const { user, authLoading } = useAuth();
 
   if (authLoading) {
-    return <main className="route-loading"><p>Checking your session...</p></main>;
+    return (
+      <main className="route-loading">
+        <p>Checking your session...</p>
+      </main>
+    );
   }
 
   if (!user) {

@@ -336,11 +336,25 @@ const deleteJob= async(req, res, next) => {
 }
 };
 
-module.exports = {
+const getRecruiterJobs = async (req, res, next) => {
+  try {
+    const jobs = await Job.find({ recruiter: req.user._id })
+      .populate("company", "name location logo")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, jobs });
+  } catch (error) {
+    next(error);
+  }
+};
+
+ module.exports = {
     getAllJobs,
+  getRecruiterJobs,
     createJob,
     getJobById,
     updateJob,
     updateJobStatus,
     deleteJob
 };
+

@@ -5,6 +5,7 @@ const authorize = require("../middleware/roleMiddleware")
 
 const {
   getAllJobs,
+  getRecruiterJobs,
   createJob,
   getJobById,
   updateJob,
@@ -15,11 +16,13 @@ const {
 const router = express.Router();
 
 // Public routes (Accessible to Jobseekers, recruiters, and visitors)
+router.get("/my-jobs", protect, authorize("recruiter"), getRecruiterJobs);
 router.get("", getAllJobs);
 router.get("/:id", getJobById);
 
 // Protected routes (Recruiters only)
-router.post("/createJob", protect, authorize("recruiter"), createJob); 
+router.post("", protect, authorize("recruiter"), createJob);
+router.post("/createJob", protect, authorize("recruiter"), createJob);
 router.put("/:id", protect, authorize("recruiter"), updateJob); 
 router.patch("/:id/status", protect, authorize("recruiter"), updateJobStatus);
 router.delete("/:id", protect, authorize("recruiter"), deleteJob); 

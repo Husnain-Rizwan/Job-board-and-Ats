@@ -10,7 +10,8 @@ const {
   getRecruiterApplications,
   getRecruiterApplicationById,
   updateApplicationStatus,
-  getRecruiterApplicationStatistics
+  getRecruiterApplicationStatistics,
+  getApplicationResume
  } = require("../controllers/applicatioController");
 
 const router = express.Router();
@@ -19,6 +20,7 @@ const router = express.Router();
 router.get("/", protect, authorize("recruiter"), getRecruiterApplications);
 router.get("/statistics", protect, authorize("recruiter"), getRecruiterApplicationStatistics);
 router.get("/:applicationId", protect, authorize("recruiter"), getRecruiterApplicationById);
+router.get("/:applicationId/resume", protect, authorize("recruiter"), getApplicationResume);
 
 router.patch("/:applicationId/status", protect, authorize("recruiter"), updateApplicationStatus);
 router.post("/upload-resume", protect, authorize("jobseeker"), upload.single("resume"), uploadResume);

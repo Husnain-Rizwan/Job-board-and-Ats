@@ -8,6 +8,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import MyApplications from "./pages/MyApplications";
 import ProtectedRoute from "./components/ProtectedRoute";
+import JobseekerDashboard from "./pages/JobseekerDashboard";
+import RecruiterDashboard from "./pages/RecruiterDashboard";
+import RecruiterJobs from "./pages/RecruiterJobs";
+import RecruiterApplications from "./pages/RecruiterApplications";
 
 function App() {
   return (
@@ -22,6 +26,12 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route element={<ProtectedRoute allowedRoles={["jobseeker"]} />}>
           <Route path="/applications" element={<MyApplications />} />
+          <Route path="/jobseeker/dashboard" element={<JobseekerDashboard />} />
+        </Route>
+        <Route element={<ProtectedRoute allowedRoles={["recruiter"]} />}>
+          <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+          <Route path="/recruiter/jobs" element={<RecruiterJobs />} />
+          <Route path="/recruiter/jobs/:jobId/applications" element={<RecruiterApplications />} />
         </Route>
 
       </Routes>

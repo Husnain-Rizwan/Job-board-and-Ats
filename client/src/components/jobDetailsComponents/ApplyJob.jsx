@@ -15,7 +15,10 @@ const ApplyJob = ({ jobId, user, onClose, onSubmitted }) => {
     const selectedResume = event.target.files?.[0];
     if (!selectedResume) return;
 
-    if (selectedResume.type !== "application/pdf" && !selectedResume.name.toLowerCase().endsWith(".pdf")) {
+    if (
+      selectedResume.type !== "application/pdf" &&
+      !selectedResume.name.toLowerCase().endsWith(".pdf")
+    ) {
       setMessage("Only PDF files are allowed.");
       return;
     }
@@ -30,7 +33,9 @@ const ApplyJob = ({ jobId, user, onClose, onSubmitted }) => {
     } catch (error) {
       console.error(error);
       setResume(null);
-      setMessage(error.response?.data?.message || "Unable to upload your resume.");
+      setMessage(
+        error.response?.data?.message || "Unable to upload your resume.",
+      );
     } finally {
       setUploadingResume(false);
     }
@@ -62,7 +67,9 @@ const ApplyJob = ({ jobId, user, onClose, onSubmitted }) => {
       onSubmitted();
     } catch (error) {
       console.error(error);
-      setMessage(error.response?.data?.message || "Unable to submit your application.");
+      setMessage(
+        error.response?.data?.message || "Unable to submit your application.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -72,14 +79,56 @@ const ApplyJob = ({ jobId, user, onClose, onSubmitted }) => {
 
   return (
     <div className="apply-job-panel">
-      <div className="apply-job-heading"><div><p className="eyebrow">Take the next step</p><h2>Apply for this job</h2></div><button type="button" className="apply-job-close" onClick={onClose} aria-label="Close application form">×</button></div>
+      <div className="apply-job-heading">
+        <div>
+          <p className="eyebrow">Take the next step</p>
+          <h2>Apply for this job</h2>
+        </div>
+        <button
+          type="button"
+          className="apply-job-close"
+          onClick={onClose}
+          aria-label="Close application form"
+        >
+          ×
+        </button>
+      </div>
       <form onSubmit={handleSubmit}>
-        <label className="apply-file-label">Resume<input type="file" accept="application/pdf,.pdf" onChange={handleResumeChange} disabled={uploadingResume || submitting} /></label>
-        {uploadingResume && <p className="selected-file">Uploading resume...</p>}
+        <label className="apply-file-label">
+          Resume
+          <input
+            type="file"
+            accept="application/pdf,.pdf"
+            onChange={handleResumeChange}
+            disabled={uploadingResume || submitting}
+          />
+        </label>
+        {uploadingResume && (
+          <p className="selected-file">Uploading resume...</p>
+        )}
         {resume?.filename && <p className="selected-file">{resume.filename}</p>}
-        <label className="apply-letter-label">Cover Letter<textarea value={coverletter} onChange={(event) => setCoverletter(event.target.value)} placeholder="Tell the employer why you are a strong fit..." rows="6" maxLength="3000" /></label>
-        {message && <p className="apply-job-error" role="alert">{message}</p>}
-        <button type="submit" className="details-apply" disabled={submitting || uploadingResume}>{submitting ? "Submitting..." : "Submit Application"}</button>
+        <label className="apply-letter-label">
+          Cover Letter
+          <textarea
+            value={coverletter}
+            onChange={(event) => setCoverletter(event.target.value)}
+            placeholder="Tell the employer why you are a strong fit..."
+            rows="6"
+            maxLength="3000"
+          />
+        </label>
+        {message && (
+          <p className="apply-job-error" role="alert">
+            {message}
+          </p>
+        )}
+        <button
+          type="submit"
+          className="details-apply"
+          disabled={submitting || uploadingResume}
+        >
+          {submitting ? "Submitting..." : "Submit Application"}
+        </button>
       </form>
     </div>
   );

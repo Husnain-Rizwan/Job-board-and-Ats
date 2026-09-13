@@ -20,6 +20,11 @@ const applicationSchema = new mongoose.Schema(
             default: null
           },
 
+          publicId: {
+            type: String,
+            default: null
+          },
+
           filename: {
             type: String,
             default: null

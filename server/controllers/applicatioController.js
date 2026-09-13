@@ -7,7 +7,7 @@ const APPLICATION_STATUSES = [
   "shortlisted",
   "interview",
   "selected",
-  "rejected"
+  "rejected",
 ];
 
 const uploadResumeToCloudinary = async (file, userId) => {
@@ -17,10 +17,17 @@ const uploadResumeToCloudinary = async (file, userId) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: "job-board/resumes",
-        resource_type: "raw",
-        public_id: `${userId}_${Date.now()}.pdf`
+        resource_type: "image",
+        type: "authenticated",
+        public_id: `${userId}_${Date.now()}`,
       },
-      (error, result) => error ? reject(error) : resolve(result)
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      },
     );
 
     uploadStream.end(file.buffer);
@@ -30,13 +37,19 @@ const uploadResumeToCloudinary = async (file, userId) => {
 const uploadResume = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "Resume is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Resume is required" });
     }
 
     const uploadResult = await uploadResumeToCloudinary(req.file, req.user._id);
     res.status(201).json({
       success: true,
-      resume: { url: uploadResult.secure_url, filename: req.file.originalname }
+      resume: { 
+        url: uploadResult.secure_url, 
+        publicId: uploadResult.public_id, 
+        filename: req.file.originalname 
+      },
     });
   } catch (error) {
     next(error);
@@ -45,7 +58,6 @@ const uploadResume = async (req, res, next) => {
 
 // Returns an application only when its job belongs to the logged-in recruiter.
 const findRecruiterApplication = async (applicationId, recruiterId) => {
-
   // Check whether applicationId is a valid MongoDB ObjectId
   if (!mongoose.isValidObjectId(applicationId)) {
     return null;
@@ -59,12 +71,11 @@ const findRecruiterApplication = async (applicationId, recruiterId) => {
 
   const job = await Job.findOne({
     _id: application.job,
-    recruiter: recruiterId
+    recruiter: recruiterId,
   });
 
   return job ? application : null;
 };
-
 
 // ======================================================
 // CREATE APPLICATION
@@ -78,14 +89,21 @@ const createApplication = async (req, res, next) => {
     // Accept the preferred uploaded-resume metadata, plus the existing multipart fallback.
     let applicationResume = resume;
     if (!applicationResume && req.file) {
-      const uploadResult = await uploadResumeToCloudinary(req.file, req.user._id);
-      applicationResume = { url: uploadResult.secure_url, filename: req.file.originalname };
+      const uploadResult = await uploadResumeToCloudinary(
+        req.file,
+        req.user._id,
+      );
+      applicationResume = {
+        url: uploadResult.secure_url,
+        publicId: uploadResult.public_id,
+        filename: req.file.originalname,
+      };
     }
 
     if (!applicationResume?.url || !applicationResume?.filename) {
       return res.status(400).json({
         success: false,
-        message: "Resume is required"
+        message: "Resume is required",
       });
     }
 
@@ -95,7 +113,7 @@ const createApplication = async (req, res, next) => {
     if (!existingJob) {
       return res.status(404).json({
         success: false,
-        message: "Job not found"
+        message: "Job not found",
       });
     }
 
@@ -103,20 +121,20 @@ const createApplication = async (req, res, next) => {
     if (existingJob.status !== "active") {
       return res.status(400).json({
         success: false,
-        message: "This job is no longer accepting applications"
+        message: "This job is no longer accepting applications",
       });
     }
 
     // 4. Check if user has already applied
     const existingApplication = await Application.findOne({
       applicant: req.user._id,
-      job: jobId
+      job: jobId,
     });
 
     if (existingApplication) {
       return res.status(409).json({
         success: false,
-        message: "You have already applied for this job"
+        message: "You have already applied for this job",
       });
     }
 
@@ -132,23 +150,21 @@ const createApplication = async (req, res, next) => {
       statusHistory: [
         {
           status: "applied",
-          changedBy: req.user._id
-        }
-      ]
+          changedBy: req.user._id,
+        },
+      ],
     });
 
     res.status(201).json({
       success: true,
       message: "Application submitted successfully",
-      application
+      application,
     });
-
   } catch (error) {
-
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
-        message: "You have already applied for this job"
+        message: "You have already applied for this job",
       });
     }
 
@@ -156,6 +172,50 @@ const createApplication = async (req, res, next) => {
   }
 };
 
+const getApplicationResume = async (req, res, next) => {
+  try {
+    const application = await findRecruiterApplication(
+      req.params.applicationId,
+      req.user._id
+    );
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found or you are not authorized"
+      });
+    }
+
+    if (!application.resume?.publicId) {
+      return res.status(404).json({
+        success: false,
+        message: "Resume not found"
+      });
+    }
+
+    const cloudinary = require("../config/cloudinary");
+
+    const signedUrl = cloudinary.url(
+      application.resume.publicId,
+      {
+        resource_type: "image",
+        type: "authenticated",
+        secure: true,
+        sign_url: true,
+        expires_at: Math.floor(Date.now() / 1000) + 300
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      url: signedUrl,
+      filename: application.resume.filename
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
 
 // ======================================================
 // STEP 1 — GET RECRUITER APPLICATIONS
@@ -163,22 +223,11 @@ const createApplication = async (req, res, next) => {
 
 const getRecruiterApplications = async (req, res, next) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      status,
-      jobId
-    } = req.query;
+    const { page = 1, limit = 10, status, jobId } = req.query;
 
-    const pageNum = Math.max(
-      1,
-      parseInt(page, 10) || 1
-    );
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
 
-    const limitNum = Math.min(
-      100,
-      Math.max(1, parseInt(limit, 10) || 10)
-    );
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
 
     const skip = (pageNum - 1) * limitNum;
 
@@ -189,12 +238,11 @@ const getRecruiterApplications = async (req, res, next) => {
     // --------------------------------------------------
 
     if (jobId) {
-
       // Invalid MongoDB ObjectId
       if (!mongoose.isValidObjectId(jobId)) {
         return res.status(400).json({
           success: false,
-          message: "Invalid job ID"
+          message: "Invalid job ID",
         });
       }
 
@@ -202,84 +250,73 @@ const getRecruiterApplications = async (req, res, next) => {
       // the authenticated recruiter.
       const job = await Job.findOne({
         _id: jobId,
-        recruiter: req.user._id
+        recruiter: req.user._id,
       }).select("_id");
 
       // Job doesn't belong to this recruiter
       if (!job) {
         return res.status(403).json({
           success: false,
-          message: "You are not authorized to access applications for this job"
+          message: "You are not authorized to access applications for this job",
         });
       }
 
       jobIds = [job._id];
-
     } else {
-
       // --------------------------------------------------
       // No specific job requested
       // Return applications from all recruiter's jobs
       // --------------------------------------------------
 
       const recruiterJobs = await Job.find({
-        recruiter: req.user._id
+        recruiter: req.user._id,
       }).select("_id");
 
       jobIds = recruiterJobs.map((job) => job._id);
     }
-
 
     // --------------------------------------------------
     // Build application filter
     // --------------------------------------------------
 
     const filter = {
-      job: { $in: jobIds }
+      job: { $in: jobIds },
     };
 
     // Validate status if provided
     if (status) {
-
       if (!APPLICATION_STATUSES.includes(status)) {
         return res.status(400).json({
           success: false,
-          message: `Status must be one of: ${APPLICATION_STATUSES.join(", ")}`
+          message: `Status must be one of: ${APPLICATION_STATUSES.join(", ")}`,
         });
       }
 
       filter.status = status;
     }
 
-
     // --------------------------------------------------
     // Get applications + total count
     // --------------------------------------------------
 
     const [applications, totalApplications] = await Promise.all([
-
       Application.find(filter)
-        .populate(
-          "applicant",
-          "name email"
-        )
+        .populate("applicant", "name email")
         .populate({
           path: "job",
-          select:
-            "title company location employmentType status recruiter",
+          select: "title company location employmentType status recruiter",
           match: {
-            recruiter: req.user._id
-          }
+            recruiter: req.user._id,
+          },
         })
         .sort({
-          appliedAt: -1
+          appliedAt: -1,
         })
         .skip(skip)
         .limit(limitNum),
 
-      Application.countDocuments(filter)
+      Application.countDocuments(filter),
     ]);
-
 
     // --------------------------------------------------
     // IMPORTANT:
@@ -291,18 +328,14 @@ const getRecruiterApplications = async (req, res, next) => {
       success: true,
       count: applications.length,
       totalApplications,
-      totalPages: Math.ceil(
-        totalApplications / limitNum
-      ),
+      totalPages: Math.ceil(totalApplications / limitNum),
       currentPage: pageNum,
-      applications
+      applications,
     });
-
   } catch (error) {
     next(error);
   }
 };
-
 
 // ======================================================
 // STEP 2 — GET SINGLE APPLICATION
@@ -310,49 +343,45 @@ const getRecruiterApplications = async (req, res, next) => {
 
 const getRecruiterApplicationById = async (req, res, next) => {
   try {
-
     const application = await findRecruiterApplication(
       req.params.applicationId,
-      req.user._id
+      req.user._id,
     );
 
     // Application doesn't exist OR
     // application belongs to another recruiter's job
     if (!application) {
-    return res.status(404).json({
-      success: false,
-      message: "Application not found or you are not authorized to modify it"
-    });
-}
+      return res.status(404).json({
+        success: false,
+        message: "Application not found or you are not authorized to modify it",
+      });
+    }
 
     await application.populate([
       {
         path: "applicant",
         select:
-          "name email professionalTitle phone location bio skills education experience"
+          "name email professionalTitle phone location bio skills education experience",
       },
       {
         path: "job",
         select:
-          "title description company location employmentType salary skills experience deadline status"
+          "title description company location employmentType salary skills experience deadline status",
       },
       {
         path: "statusHistory.changedBy",
-        select:
-          "name email role"
-      }
+        select: "name email role",
+      },
     ]);
 
     res.status(200).json({
       success: true,
-      application
+      application,
     });
-
   } catch (error) {
     next(error);
   }
 };
-
 
 // ======================================================
 // STEP 3, 4 & 5 — UPDATE APPLICATION STATUS
@@ -360,7 +389,6 @@ const getRecruiterApplicationById = async (req, res, next) => {
 
 const updateApplicationStatus = async (req, res, next) => {
   try {
-
     const { status } = req.body;
 
     // --------------------------------------------------
@@ -370,11 +398,9 @@ const updateApplicationStatus = async (req, res, next) => {
     if (!APPLICATION_STATUSES.includes(status)) {
       return res.status(400).json({
         success: false,
-        message:
-          `Status must be one of: ${APPLICATION_STATUSES.join(", ")}`
+        message: `Status must be one of: ${APPLICATION_STATUSES.join(", ")}`,
       });
     }
-
 
     // --------------------------------------------------
     // Find application belonging to this recruiter
@@ -382,17 +408,15 @@ const updateApplicationStatus = async (req, res, next) => {
 
     const application = await findRecruiterApplication(
       req.params.applicationId,
-      req.user._id
+      req.user._id,
     );
 
     if (!application) {
       return res.status(404).json({
         success: false,
-        message:
-          "Application not found or you are not authorized to modify it"
+        message: "Application not found or you are not authorized to modify it",
       });
     }
-
 
     // --------------------------------------------------
     // Prevent same status
@@ -401,11 +425,9 @@ const updateApplicationStatus = async (req, res, next) => {
     if (application.status === status) {
       return res.status(400).json({
         success: false,
-        message:
-          `Application is already ${status}`
+        message: `Application is already ${status}`,
       });
     }
-
 
     // --------------------------------------------------
     // STEP 4 — Update current status
@@ -413,108 +435,82 @@ const updateApplicationStatus = async (req, res, next) => {
 
     application.status = status;
 
-
     // --------------------------------------------------
     // STEP 5 — Add status history
     // --------------------------------------------------
 
     application.statusHistory.push({
       status,
-      changedBy: req.user._id
+      changedBy: req.user._id,
     });
-
 
     await application.save();
 
-
     res.status(200).json({
       success: true,
-      message:
-        "Application status updated successfully",
-      application
+      message: "Application status updated successfully",
+      application,
     });
-
   } catch (error) {
     next(error);
   }
 };
-
 
 // ======================================================
 // STEP 6 — APPLICATION STATISTICS
 // ======================================================
 
-const getRecruiterApplicationStatistics = async (
-  req,
-  res,
-  next
-) => {
+const getRecruiterApplicationStatistics = async (req, res, next) => {
   try {
-
     // Get only this recruiter's jobs
     const recruiterJobs = await Job.find({
-      recruiter: req.user._id
+      recruiter: req.user._id,
     }).select("_id");
 
-    const jobIds = recruiterJobs.map(
-      (job) => job._id
-    );
-
+    const jobIds = recruiterJobs.map((job) => job._id);
 
     // Group applications by status
     const groupedStats = await Application.aggregate([
       {
         $match: {
-          job: { $in: jobIds }
-        }
+          job: { $in: jobIds },
+        },
       },
 
       {
         $group: {
           _id: "$status",
-          count: { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
-
     // Initialize every status with 0
-    const statistics = APPLICATION_STATUSES.reduce(
-      (totals, status) => {
-        totals[status] = 0;
-        return totals;
-      },
-      {}
-    );
-
+    const statistics = APPLICATION_STATUSES.reduce((totals, status) => {
+      totals[status] = 0;
+      return totals;
+    }, {});
 
     // Insert actual counts
-    groupedStats.forEach(
-      ({ _id, count }) => {
-        statistics[_id] = count;
-      }
-    );
-
+    groupedStats.forEach(({ _id, count }) => {
+      statistics[_id] = count;
+    });
 
     // Calculate total applications
-    const totalApplications =
-      Object.values(statistics).reduce(
-        (sum, count) => sum + count,
-        0
-      );
-
+    const totalApplications = Object.values(statistics).reduce(
+      (sum, count) => sum + count,
+      0,
+    );
 
     res.status(200).json({
       success: true,
       totalApplications,
-      statistics
+      statistics,
     });
-
   } catch (error) {
     next(error);
   }
 };
-
 
 module.exports = {
   createApplication,
@@ -522,5 +518,6 @@ module.exports = {
   getRecruiterApplications,
   getRecruiterApplicationById,
   updateApplicationStatus,
-  getRecruiterApplicationStatistics
+  getRecruiterApplicationStatistics,
+  getApplicationResume
 };

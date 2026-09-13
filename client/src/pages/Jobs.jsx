@@ -35,9 +35,7 @@ const Jobs = () => {
   const [searchParams] = useSearchParams();
 
   const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [location, setLocation] = useState(
-    searchParams.get("location") || ""
-  );
+  const [location, setLocation] = useState(searchParams.get("location") || "");
 
   const [filters, setFilters] = useState(initialFilters);
 
@@ -47,46 +45,54 @@ const Jobs = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchJobs = useCallback(async ({ searchValue = "", locationValue = "", filterValues = initialFilters, page = 1 } = {}) => {
-    try {
-      setLoading(true);
-      setError("");
+  const fetchJobs = useCallback(
+    async ({
+      searchValue = "",
+      locationValue = "",
+      filterValues = initialFilters,
+      page = 1,
+    } = {}) => {
+      try {
+        setLoading(true);
+        setError("");
 
-      const params = {
-        search: searchValue.trim(),
-        location: locationValue.trim(),
-        page,
-        limit: JOBS_PER_PAGE,
-      };
+        const params = {
+          search: searchValue.trim(),
+          location: locationValue.trim(),
+          page,
+          limit: JOBS_PER_PAGE,
+        };
 
-      if (filterValues.employmentType.length > 0) {
-        params.employmentType = filterValues.employmentType.join(",");
+        if (filterValues.employmentType.length > 0) {
+          params.employmentType = filterValues.employmentType.join(",");
+        }
+
+        const experienceRange = experienceRanges[filterValues.experience];
+        if (experienceRange) {
+          Object.assign(params, experienceRange);
+        }
+
+        const salaryRange = salaryRanges[filterValues.salary];
+        if (salaryRange) {
+          Object.assign(params, salaryRange);
+        }
+
+        const response = await api.get("/jobs", {
+          params,
+        });
+
+        setJobs(Array.isArray(response.data?.jobs) ? response.data.jobs : []);
+        setCurrentPage(response.data?.currentPage || page);
+        setTotalPages(Math.max(1, response.data?.totalPages || 1));
+      } catch (error) {
+        console.error(error);
+        setError("Failed to load jobs.");
+      } finally {
+        setLoading(false);
       }
-
-      const experienceRange = experienceRanges[filterValues.experience];
-      if (experienceRange) {
-        Object.assign(params, experienceRange);
-      }
-
-      const salaryRange = salaryRanges[filterValues.salary];
-      if (salaryRange) {
-        Object.assign(params, salaryRange);
-      }
-
-      const response = await api.get("/jobs", {
-        params,
-      });
-
-      setJobs(Array.isArray(response.data?.jobs) ? response.data.jobs : []);
-      setCurrentPage(response.data?.currentPage || page);
-      setTotalPages(Math.max(1, response.data?.totalPages || 1));
-    } catch (error) {
-      console.error(error);
-      setError("Failed to load jobs.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -122,21 +128,35 @@ const Jobs = () => {
 
   const handleSearch = (event) => {
     event.preventDefault();
-    fetchJobs({ searchValue: search, locationValue: location, filterValues: filters, page: 1 });
+    fetchJobs({
+      searchValue: search,
+      locationValue: location,
+      filterValues: filters,
+      page: 1,
+    });
   };
 
   const applyFilters = () => {
-    fetchJobs({ searchValue: search, locationValue: location, filterValues: filters, page: 1 });
+    fetchJobs({
+      searchValue: search,
+      locationValue: location,
+      filterValues: filters,
+      page: 1,
+    });
   };
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages || page === currentPage) return;
-    fetchJobs({ searchValue: search, locationValue: location, filterValues: filters, page });
+    fetchJobs({
+      searchValue: search,
+      locationValue: location,
+      filterValues: filters,
+      page,
+    });
   };
 
   return (
     <main className="jobs-page">
-
       <JobSearchBar
         search={search}
         location={location}
@@ -146,7 +166,6 @@ const Jobs = () => {
       />
 
       <section className="jobs-content section-shell">
-
         <JobFilters
           filters={filters}
           onFilterChange={updateFilter}
@@ -158,14 +177,14 @@ const Jobs = () => {
 
         {error && <p>{error}</p>}
 
-        {!loading && !error && (
-          <JobList jobs={jobs} />
-        )}
-
+        {!loading && !error && <JobList jobs={jobs} />}
       </section>
 
-      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
-
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
     </main>
   );
 };

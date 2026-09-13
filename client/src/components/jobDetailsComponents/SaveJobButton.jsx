@@ -16,11 +16,15 @@ const SaveJobButton = ({ jobId, user, authLoading }) => {
     try {
       setChecking(true);
       const response = await api.get("/savedJobs");
-      const savedJobs = Array.isArray(response.data?.savedJobs) ? response.data.savedJobs : [];
-      setSaved(savedJobs.some((savedJob) => {
-        const savedJobId = savedJob.job?._id || savedJob.job;
-        return savedJobId?.toString() === jobId.toString();
-      }));
+      const savedJobs = Array.isArray(response.data?.savedJobs)
+        ? response.data.savedJobs
+        : [];
+      setSaved(
+        savedJobs.some((savedJob) => {
+          const savedJobId = savedJob.job?._id || savedJob.job;
+          return savedJobId?.toString() === jobId.toString();
+        }),
+      );
     } catch (error) {
       console.error(error);
     } finally {
@@ -61,7 +65,9 @@ const SaveJobButton = ({ jobId, user, authLoading }) => {
       }
     } catch (error) {
       console.error(error);
-      setMessage(error.response?.data?.message || "Unable to update saved job.");
+      setMessage(
+        error.response?.data?.message || "Unable to update saved job.",
+      );
     } finally {
       setLoading(false);
     }
@@ -69,10 +75,26 @@ const SaveJobButton = ({ jobId, user, authLoading }) => {
 
   return (
     <div className="save-job-control">
-      <button type="button" className="details-save" onClick={toggleSaved} disabled={authLoading || loading || checking}>
-        <span aria-hidden="true">{saved ? "♥" : "♡"}</span> {authLoading ? "Checking session..." : checking ? "Checking..." : saved ? "Saved" : "Save Job"}
+      <button
+        type="button"
+        className="details-save"
+        onClick={toggleSaved}
+        disabled={authLoading || loading || checking}
+      >
+        <span aria-hidden="true">{saved ? "♥" : "♡"}</span>{" "}
+        {authLoading
+          ? "Checking session..."
+          : checking
+            ? "Checking..."
+            : saved
+              ? "Saved"
+              : "Save Job"}
       </button>
-      {message && <p className="save-job-error" role="alert">{message}</p>}
+      {message && (
+        <p className="save-job-error" role="alert">
+          {message}
+        </p>
+      )}
     </div>
   );
 };
