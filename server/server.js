@@ -28,7 +28,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URL,
     credentials: true,
   })
 );
@@ -69,7 +69,7 @@ const startServer = async () => {
         await connectDB();
 
         app.listen(PORT, () => {
-            console.log(`Server running on port http://localhost:${PORT}`);
+            console.log(`Server running on port ${PORT}`);
         });
     } catch (error) {
         console.error("Failed to start server:", error.message);
