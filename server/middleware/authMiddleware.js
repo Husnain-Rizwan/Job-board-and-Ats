@@ -3,7 +3,14 @@ const jwt = require("jsonwebtoken");
 
 const protect =async(req, res, next) => {
   try{
-    const token = req.cookies.token;
+    // Prefer an Authorization header so a Vercel frontend can authenticate even
+    // when the browser blocks cross-site (third-party) cookies from Render.
+    // Keep the cookie fallback for same-site deployments and existing sessions.
+    const authorization = req.headers.authorization || "";
+    const bearerToken = authorization.startsWith("Bearer ")
+      ? authorization.slice(7).trim()
+      : null;
+    const token = bearerToken || req.cookies.token;
 
     // checking if token exists
     if (!token) {

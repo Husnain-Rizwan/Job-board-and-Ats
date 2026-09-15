@@ -1,6 +1,5 @@
 export const companyInitials = (name) => {
-  const words = String(name || "Company").trim().split(/\s+/).filter(Boolean);
-  return words.slice(0, 2).map((word) => word[0]).join("").toUpperCase() || "C";
+  return String(name || "Company").trim().charAt(0).toUpperCase() || "C";
 };
 
 export const PAKISTAN_PHONE_PATTERN = "\\+92[0-9]{10}";

@@ -1,18 +1,13 @@
+import CompanyLogo from "../CompanyLogo";
+
 const CompanyCard = ({ company }) => {
   const companyName = company?.name || "Company";
-  const companyInitial = companyName.charAt(0).toUpperCase();
 
   return (
     <section className="company-details-card">
       <p className="eyebrow">About the company</p>
       <div className="company-details-top">
-        <div className="company-details-mark">
-          {company?.logo ? (
-            <img src={company.logo} alt={`${companyName} logo`} />
-          ) : (
-            companyInitial
-          )}
-        </div>
+        <CompanyLogo company={company} name={companyName} className="company-details-mark" />
         <div>
           <h2>{companyName}</h2>
           <p>{company?.location || "Location not specified"}</p>

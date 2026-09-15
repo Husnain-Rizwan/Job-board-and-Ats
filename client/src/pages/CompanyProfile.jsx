@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../services/api";
-import { companyInitials } from "../utils/company";
+import CompanyLogo from "../components/CompanyLogo";
 
 const CompanyProfile = () => {
   const { id } = useParams();
@@ -52,8 +52,6 @@ const CompanyProfile = () => {
         </Link>
       </main>
     );
-  const initial = companyInitials(company.name);
-
   return (
     <main className="company-page">
       <div className="section-shell company-shell">
@@ -61,13 +59,7 @@ const CompanyProfile = () => {
           ← Back to jobs
         </Link>
         <header className="public-company-header">
-          <div className="company-profile-logo">
-            {company.logo ? (
-              <img src={company.logo} alt={`${company.name} logo`} />
-            ) : (
-              initial
-            )}
-          </div>
+          <CompanyLogo company={company} className="company-profile-logo" />
           <div>
             <p className="eyebrow">Company profile</p>
             <h1>{company.name}</h1>

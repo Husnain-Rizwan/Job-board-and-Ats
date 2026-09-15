@@ -78,17 +78,21 @@ const loginUser = async (req, res)  => {
       }
     );
 
-    // Put JWT inside cookie
+    // Keep a secure cookie for same-site/custom-domain deployments. The token is
+    // also returned below because browsers can block a Render cookie when the
+    // frontend is hosted on a different Vercel domain.
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("token", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 7 * 24 * 60 * 60 * 1000
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     // Send response
     res.status(200).json({
       message: "Login successful",
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -106,10 +110,11 @@ const loginUser = async (req, res)  => {
 };
 
 const logoutUser = (req, res) => {
+  const isProduction = process.env.NODE_ENV === "production";
   res.clearCookie("token", {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
   });
 
   res.status(200).json({ message: "Logged out successfully" });

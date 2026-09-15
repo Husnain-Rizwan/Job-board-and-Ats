@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AuthContext } from "./AuthContext";
-import api from "../services/api";
+import api, { clearAuthToken } from "../services/api";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    clearAuthToken();
     setUser(null);
   };
 

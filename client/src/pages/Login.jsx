@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import api from "../services/api";
+import api, { saveAuthToken } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
 const Login = () => {
@@ -32,6 +32,7 @@ const Login = () => {
     try {
       setSubmitting(true);
       const response = await api.post("/auth/login", form);
+      saveAuthToken(response.data.token);
       login(response.data.user);
       navigate(location.state?.from?.pathname || "/", { replace: true });
     } catch (requestError) {

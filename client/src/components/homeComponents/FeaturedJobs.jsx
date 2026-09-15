@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import CompanyLogo from "../CompanyLogo";
 
 const PinIcon = () => (
   <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
@@ -43,7 +44,7 @@ const FeaturedJobs = ({ jobs, loading, error }) => (
         {loading ? <p className="home-jobs-message">Loading latest opportunities...</p> : error ? <p className="home-jobs-message">{error}</p> : jobs.length === 0 ? <p className="home-jobs-message">No active jobs available yet.</p> : jobs.map((job, index) => (
           <article className="job-card" key={job._id}>
             <Link to={`/jobs/${job._id}`} className="job-card-link">
-              <div className={`company-mark ${tones[index % tones.length]}`}>{job.company?.name?.charAt(0)?.toUpperCase() || "J"}</div>
+              <CompanyLogo company={job.company} className={`company-mark ${tones[index % tones.length]}`} />
               <p className="company-name">
                 {job.company?.name || "Company"}
                 <span className="verified">&#10003;</span>

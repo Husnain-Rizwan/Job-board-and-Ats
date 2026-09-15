@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import ApplicationStatus from "./ApplicationStatus";
+import CompanyLogo from "../CompanyLogo";
 
 const formatDate = (value) => {
   if (!value) return "Date unavailable";
@@ -21,9 +22,7 @@ const ApplicationCard = ({ application }) => {
   return (
     <article className="dashboard-application-card">
       <div className="dashboard-application-main">
-        <div className="dashboard-company-mark">
-          {companyName.charAt(0).toUpperCase()}
-        </div>
+        <CompanyLogo company={typeof job.company === "object" ? job.company : null} name={companyName} className="dashboard-company-mark" />
         <div>
           <h3>{job.title || "Job title unavailable"}</h3>
           <p>{companyName}</p>

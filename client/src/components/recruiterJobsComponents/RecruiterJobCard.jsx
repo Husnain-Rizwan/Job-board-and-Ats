@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import CompanyLogo from "../CompanyLogo";
 
 const RecruiterJobCard = ({ job, onEdit, onToggleStatus, changing }) => {
   const companyName = job.company?.name || "Company";
@@ -7,9 +8,7 @@ const RecruiterJobCard = ({ job, onEdit, onToggleStatus, changing }) => {
   return (
     <article className="management-job-card">
       <div className="management-job-main">
-        <div className="management-company-mark">
-          {companyName.charAt(0).toUpperCase()}
-        </div>
+        <CompanyLogo company={job.company} name={companyName} className="management-company-mark" />
         <div>
           <h2>{job.title}</h2>
           <p>

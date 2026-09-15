@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { companyInitials } from "../../utils/company";
+import CompanyLogo from "../CompanyLogo";
 
 const PinIcon = () => (
   <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
@@ -56,20 +56,12 @@ const formatPostedDate = (createdAt) => {
 const JobCard = ({ job }) => {
   const jobId = job._id;
   const companyName = job.company?.name || job.company || "Company";
-  const companyLogo = job.company?.logo;
-  const companyMark = companyInitials(companyName);
   const skills = Array.isArray(job.skills) ? job.skills : [];
 
   return (
     <article className="listing-job-card">
       <Link to={`/jobs/${jobId}`} className="listing-job-main">
-        <div className="company-mark listing-company-mark">
-          {companyLogo ? (
-            <img src={companyLogo} alt={`${companyName} logo`} />
-          ) : (
-            companyMark
-          )}
-        </div>
+        <CompanyLogo company={job.company} name={companyName} className="company-mark listing-company-mark" />
         <p className="company-name">
           {companyName}
           <span className="verified">&#10003;</span>

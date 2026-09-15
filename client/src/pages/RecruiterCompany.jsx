@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
-import { companyInitials } from "../utils/company";
+import CompanyLogo from "../components/CompanyLogo";
 
 const emptyCompany = { name: "", industry: "", location: "", website: "", logo: "", description: "" };
 
@@ -102,7 +102,7 @@ const RecruiterCompany = () => {
       <label>Company description *<textarea required minLength="20" maxLength="2000" name="description" rows="7" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
       <div className="company-form-actions"><button type="button" className="secondary-button light-button" onClick={() => { setEditing(false); setForm(company ? { ...emptyCompany, ...company } : emptyCompany); setLogoFile(null); }}>Cancel</button><button className="secondary-button dark-button" disabled={saving}>{saving ? "Saving..." : "Save Company"}</button></div>
     </form> : <section className="company-management-card">
-      <div className="company-profile-identity"><div className="company-profile-logo">{company.logo ? <img src={company.logo} alt={`${company.name} logo`} /> : companyInitials(company.name)}</div><div><h2>{company.name}</h2><p>{company.industry || "Industry not specified"} · {company.location}</p></div></div>
+      <div className="company-profile-identity"><CompanyLogo company={company} className="company-profile-logo" /><div><h2>{company.name}</h2><p>{company.industry || "Industry not specified"} · {company.location}</p></div></div>
       {company.website && <a href={company.website} target="_blank" rel="noreferrer" className="text-link">Visit website ↗</a>}
       <div className="company-description"><h3>About {company.name}</h3><p>{company.description}</p></div>
       <section className="company-team">

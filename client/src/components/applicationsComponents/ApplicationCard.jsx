@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import ApplicationStatus from "./ApplicationStatus";
-import { companyInitials } from "../../utils/company";
+import CompanyLogo from "../CompanyLogo";
 
 const formatAppliedDate = (date) => {
   if (!date) return "Date unavailable";
@@ -22,13 +22,7 @@ const ApplicationCard = ({ application }) => {
   return (
     <article className="application-card">
       <div className="application-card-top">
-        <div className="application-company-mark">
-          {company?.logo ? (
-            <img src={company.logo} alt={`${companyName} logo`} />
-          ) : (
-            companyInitials(companyName)
-          )}
-        </div>
+        <CompanyLogo company={company} name={companyName} className="application-company-mark" />
         <div>
           <h2>{job.title || "Job title unavailable"}</h2>
           <p>{companyName}</p>
