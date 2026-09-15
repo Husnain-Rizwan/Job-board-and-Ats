@@ -121,10 +121,9 @@ const Login = () => {
           <div className="text-center text-xs text-gray-400 my-2"> OR </div>{" "}
           <Link
             to="/register"
-            className="block w-full text-center py-2.5 px-4 rounded-lg border border-green-300 text-green-600! font-medium transition hover:border-green-500 hover:text-green-900!"
+            className="auth-submit block w-full text-center pt-4"
           >
-            {" "}
-            Register Yourself{" "}
+            Register Now
           </Link>{" "}
         </form>{" "}
       </section>{" "}
