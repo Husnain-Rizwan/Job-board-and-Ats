@@ -62,6 +62,17 @@ app.use((req, res) => {
   res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
 });
 
+app.use((error, req, res, next) => {
+  if (error.name === "MulterError" && error.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({ message: "Uploaded file is too large" });
+  }
+  if (error.name === "ValidationError") {
+    return res.status(400).json({ message: Object.values(error.errors).map((item) => item.message).join(" ") });
+  }
+  if (error.message) return res.status(400).json({ message: error.message });
+  next(error);
+});
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

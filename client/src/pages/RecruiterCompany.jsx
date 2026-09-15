@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
+import { companyInitials } from "../utils/company";
 
 const emptyCompany = { name: "", industry: "", location: "", website: "", logo: "", description: "" };
 
@@ -12,6 +13,7 @@ const RecruiterCompany = () => {
   const [error, setError] = useState("");
   const [recruiterEmail, setRecruiterEmail] = useState("");
   const [addingRecruiter, setAddingRecruiter] = useState(false);
+  const [logoFile, setLogoFile] = useState(null);
 
   const loadCompany = useCallback(async () => {
     try {
@@ -27,19 +29,30 @@ const RecruiterCompany = () => {
     }
   }, []);
 
-  useEffect(() => { loadCompany(); }, [loadCompany]);
+  useEffect(() => {
+    const loadTimer = window.setTimeout(() => { void loadCompany(); }, 0);
+    return () => window.clearTimeout(loadTimer);
+  }, [loadCompany]);
 
   const saveCompany = async (event) => {
     event.preventDefault();
+    if (form.website && !/^https?:\/\/\S+$/i.test(form.website)) {
+      setError("Website must start with http:// or https://.");
+      return;
+    }
     try {
       setSaving(true);
       setError("");
+      const data = new FormData();
+      ["name", "industry", "location", "website", "description"].forEach((field) => data.append(field, form[field] || ""));
+      if (logoFile) data.append("logo", logoFile);
       const response = company
-        ? await api.patch("/companies/my-company", form)
-        : await api.post("/companies", form);
+        ? await api.patch("/companies/my-company", data)
+        : await api.post("/companies", data);
       const savedCompany = response.data?.company;
       setCompany(savedCompany);
       setForm({ ...emptyCompany, ...savedCompany });
+      setLogoFile(null);
       setEditing(false);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to save your company profile.");
@@ -79,16 +92,17 @@ const RecruiterCompany = () => {
     {error && <p className="management-error" role="alert">{error}</p>}
     {editing ? <form className="company-form" onSubmit={saveCompany}>
       <div className="company-form-grid">
-        <label>Company name *<input required name="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
-        <label>Industry<input name="industry" value={form.industry || ""} onChange={(e) => setForm({ ...form, industry: e.target.value })} /></label>
-        <label>Location *<input required name="location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></label>
+        <label>Company name *<input required minLength="2" maxLength="100" name="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
+        <label>Industry<input maxLength="100" name="industry" value={form.industry || ""} onChange={(e) => setForm({ ...form, industry: e.target.value })} /></label>
+        <label>Location *<input required minLength="2" maxLength="100" name="location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></label>
         <label>Website<input type="url" name="website" value={form.website || ""} placeholder="https://example.com" onChange={(e) => setForm({ ...form, website: e.target.value })} /></label>
       </div>
-      <label>Logo URL<input type="url" name="logo" value={form.logo || ""} placeholder="https://example.com/logo.png" onChange={(e) => setForm({ ...form, logo: e.target.value })} /></label>
-      <label>Company description *<textarea required name="description" rows="7" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-      <div className="company-form-actions"><button type="button" className="secondary-button light-button" onClick={() => { setEditing(false); setForm(company ? { ...emptyCompany, ...company } : emptyCompany); }}>Cancel</button><button className="secondary-button dark-button" disabled={saving}>{saving ? "Saving..." : "Save Company"}</button></div>
+      <label>Company logo <small>Optional · PNG, JPG, or WebP · up to 2 MB</small><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 2 * 1024 * 1024) { setError("Logo must be 2 MB or smaller."); e.target.value = ""; return; } setLogoFile(file); setError(""); }} /></label>
+      {logoFile && <p className="selected-file">New logo: {logoFile.name}</p>}
+      <label>Company description *<textarea required minLength="20" maxLength="2000" name="description" rows="7" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+      <div className="company-form-actions"><button type="button" className="secondary-button light-button" onClick={() => { setEditing(false); setForm(company ? { ...emptyCompany, ...company } : emptyCompany); setLogoFile(null); }}>Cancel</button><button className="secondary-button dark-button" disabled={saving}>{saving ? "Saving..." : "Save Company"}</button></div>
     </form> : <section className="company-management-card">
-      <div className="company-profile-identity"><div className="company-profile-logo">{company.logo ? <img src={company.logo} alt={`${company.name} logo`} /> : company.name.charAt(0).toUpperCase()}</div><div><h2>{company.name}</h2><p>{company.industry || "Industry not specified"} · {company.location}</p></div></div>
+      <div className="company-profile-identity"><div className="company-profile-logo">{company.logo ? <img src={company.logo} alt={`${company.name} logo`} /> : companyInitials(company.name)}</div><div><h2>{company.name}</h2><p>{company.industry || "Industry not specified"} · {company.location}</p></div></div>
       {company.website && <a href={company.website} target="_blank" rel="noreferrer" className="text-link">Visit website ↗</a>}
       <div className="company-description"><h3>About {company.name}</h3><p>{company.description}</p></div>
       <section className="company-team">

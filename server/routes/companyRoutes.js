@@ -1,6 +1,7 @@
 const express = require("express");
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
+const { logoUpload } = require("../middleware/uploadMiddleware");
 const {
   createCompany,
   getMyCompany,
@@ -14,10 +15,10 @@ const {
 
 const router = express.Router();
 
-router.post("/", protect, authorize("recruiter"), createCompany);
-router.post("/createCompany", protect, authorize("recruiter"), createCompany);
+router.post("/", protect, authorize("recruiter"), logoUpload.single("logo"), createCompany);
+router.post("/createCompany", protect, authorize("recruiter"), logoUpload.single("logo"), createCompany);
 router.get("/my-company", protect, authorize("recruiter"), getMyCompany);
-router.patch("/my-company", protect, authorize("recruiter"), updateMyCompany);
+router.patch("/my-company", protect, authorize("recruiter"), logoUpload.single("logo"), updateMyCompany);
 router.post("/my-company/recruiters", protect, authorize("recruiter"), addRecruiter);
 
 router.get("/:id/jobs", getCompanyJobs);

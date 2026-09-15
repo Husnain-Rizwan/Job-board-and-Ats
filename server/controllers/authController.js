@@ -81,8 +81,8 @@ const loginUser = async (req, res)  => {
     // Put JWT inside cookie
     res.cookie("token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: true,
+    sameSite: "none",
     maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
@@ -108,9 +108,10 @@ const loginUser = async (req, res)  => {
 const logoutUser = (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: true,
+    sameSite: "none",
   });
+
   res.status(200).json({ message: "Logged out successfully" });
 };
 

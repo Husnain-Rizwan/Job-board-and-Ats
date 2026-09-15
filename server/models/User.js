@@ -39,7 +39,11 @@
 
             phone: {
                 type: String,
-                trim: true
+                trim: true,
+                validate: {
+                    validator: (value) => !value || /^\+92\d{10}$/.test(value),
+                    message: "Phone number must use the format +923012345678"
+                }
             },
 
             location: {

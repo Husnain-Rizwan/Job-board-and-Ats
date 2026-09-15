@@ -1,7 +1,13 @@
 const Company = require("../models/Company");
 const Job = require("../models/Job");
+const { uploadCompanyLogo } = require("../utils/companyLogoCloudinary");
 
-const companyFields = ["name", "description", "industry", "location", "website", "logo"];
+const companyFields = ["name", "description", "industry", "location", "website"];
+const normaliseCompanyData = (data) => {
+  const companyData = Object.fromEntries(Object.entries(data).filter(([field]) => companyFields.includes(field)));
+  if (companyData.website === "") companyData.website = null;
+  return companyData;
+};
 const companyMemberFilter = (recruiterId) => ({
   $or: [{ recruiter: recruiterId }, { recruiters: recruiterId }],
 });
@@ -11,8 +17,13 @@ const createCompany = async (req, res, next) => {
     const existingCompany = await Company.findOne(companyMemberFilter(req.user._id));
     if (existingCompany) return res.status(409).json({ message: "You already have a company profile" });
 
-    const companyData = Object.fromEntries(Object.entries(req.body).filter(([field]) => companyFields.includes(field)));
+    const companyData = normaliseCompanyData(req.body);
     const company = await Company.create({ ...companyData, recruiter: req.user._id, recruiters: [req.user._id] });
+    if (req.file) {
+      const uploadedLogo = await uploadCompanyLogo(req.file, company._id);
+      company.logo = uploadedLogo.secure_url;
+      await company.save();
+    }
     await company.populate("recruiters", "name email professionalTitle phone");
     res.status(201).json({ success: true, message: "Company created successfully", company });
   } catch (error) {
@@ -37,9 +48,15 @@ const getMyCompany = async (req, res, next) => {
 
 const updateMyCompany = async (req, res, next) => {
   try {
-    const updates = Object.fromEntries(Object.entries(req.body).filter(([field]) => companyFields.includes(field)));
-    const company = await Company.findOneAndUpdate(companyMemberFilter(req.user._id), updates, { new: true, runValidators: true });
+    const updates = normaliseCompanyData(req.body);
+    const company = await Company.findOne(companyMemberFilter(req.user._id));
     if (!company) return res.status(404).json({ message: "Company profile not found" });
+    Object.assign(company, updates);
+    if (req.file) {
+      const uploadedLogo = await uploadCompanyLogo(req.file, company._id);
+      company.logo = uploadedLogo.secure_url;
+    }
+    await company.save();
     await company.populate("recruiters", "name email professionalTitle phone");
     res.status(200).json({ success: true, message: "Company profile updated successfully", company });
   } catch (error) {

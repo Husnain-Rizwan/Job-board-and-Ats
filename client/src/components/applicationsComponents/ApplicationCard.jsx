@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import ApplicationStatus from "./ApplicationStatus";
+import { companyInitials } from "../../utils/company";
 
 const formatAppliedDate = (date) => {
   if (!date) return "Date unavailable";
@@ -25,7 +26,7 @@ const ApplicationCard = ({ application }) => {
           {company?.logo ? (
             <img src={company.logo} alt={`${companyName} logo`} />
           ) : (
-            companyName.charAt(0).toUpperCase()
+            companyInitials(companyName)
           )}
         </div>
         <div>

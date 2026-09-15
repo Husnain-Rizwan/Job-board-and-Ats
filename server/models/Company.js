@@ -31,7 +31,11 @@ const companySchema = new mongoose.Schema(
         website: {
           type: String,
           default: null,
-          trim: true
+          trim: true,
+          validate: {
+            validator: (value) => !value || /^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(value),
+            message: "Website must be a valid URL starting with http:// or https://"
+          }
         },
 
         location: {

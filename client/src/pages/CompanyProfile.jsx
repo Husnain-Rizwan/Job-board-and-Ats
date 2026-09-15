@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../services/api";
+import { companyInitials } from "../utils/company";
 
 const CompanyProfile = () => {
   const { id } = useParams();
@@ -51,7 +52,7 @@ const CompanyProfile = () => {
         </Link>
       </main>
     );
-  const initial = company.name.charAt(0).toUpperCase();
+  const initial = companyInitials(company.name);
 
   return (
     <main className="company-page">

@@ -15,6 +15,12 @@ const ApplyJob = ({ jobId, user, onClose, onSubmitted, onAlreadyApplied }) => {
     const selectedResume = event.target.files?.[0];
     if (!selectedResume) return;
 
+    if (selectedResume.size > 5 * 1024 * 1024) {
+      setMessage("Resume must be 5 MB or smaller.");
+      event.target.value = "";
+      return;
+    }
+
     if (
       selectedResume.type !== "application/pdf" &&
       !selectedResume.name.toLowerCase().endsWith(".pdf")

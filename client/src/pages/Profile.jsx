@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
+import { isPakistanPhone, PAKISTAN_PHONE_PATTERN } from "../utils/company";
 
 const blankProfile = {
   professionalTitle: "",
@@ -55,6 +56,10 @@ const Profile = () => {
 
   const saveProfile = async (event) => {
     event.preventDefault();
+    if (!isPakistanPhone(form.phone)) {
+      setError("Phone number must use the format +923012345678.");
+      return;
+    }
     try {
       setSaving(true);
       setError("");
@@ -116,6 +121,11 @@ const Profile = () => {
   const uploadResume = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Resume must be 5 MB or smaller.");
+      event.target.value = "";
+      return;
+    }
     if (
       file.type !== "application/pdf" &&
       !file.name.toLowerCase().endsWith(".pdf")
@@ -218,6 +228,11 @@ const Profile = () => {
               <label>
                 Phone
                 <input
+                  type="tel"
+                  inputMode="tel"
+                  pattern={PAKISTAN_PHONE_PATTERN}
+                  title="Use the format +923012345678"
+                  placeholder="+923012345678"
                   value={form.phone || ""}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 />

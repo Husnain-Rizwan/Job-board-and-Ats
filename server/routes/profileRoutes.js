@@ -1,7 +1,7 @@
 const express = require("express");
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
-const upload = require("../middleware/uploadMiddleware");
+const { resumeUpload } = require("../middleware/uploadMiddleware");
 const {
   getProfile,
   getProfileCompletion,
@@ -20,7 +20,7 @@ router.use(protect, authorize("jobseeker"));
 router.get("/completion", getProfileCompletion);
 router.get("/", getProfile);
 router.patch("/", updateProfile);
-router.post("/resume", upload.single("resume"), uploadProfileResume);
+router.post("/resume", resumeUpload.single("resume"), uploadProfileResume);
 router.get("/resume", getProfileResume);
 router.delete("/resume", deleteProfileResume);
 

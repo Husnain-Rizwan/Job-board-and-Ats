@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { companyInitials } from "../../utils/company";
 
 const PinIcon = () => (
   <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
@@ -56,7 +57,7 @@ const JobCard = ({ job }) => {
   const jobId = job._id;
   const companyName = job.company?.name || job.company || "Company";
   const companyLogo = job.company?.logo;
-  const companyMark = companyName?.charAt(0).toUpperCase() || "J";
+  const companyMark = companyInitials(companyName);
   const skills = Array.isArray(job.skills) ? job.skills : [];
 
   return (

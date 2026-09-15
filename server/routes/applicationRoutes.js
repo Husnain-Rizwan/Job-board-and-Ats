@@ -2,7 +2,7 @@ const express = require("express");
 
 const protect = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
-const upload = require("../middleware/uploadMiddleware");
+const { resumeUpload } = require("../middleware/uploadMiddleware");
 
 const { 
   createApplication,
@@ -23,7 +23,7 @@ router.get("/:applicationId", protect, authorize("recruiter"), getRecruiterAppli
 router.get("/:applicationId/resume", protect, authorize("recruiter"), getApplicationResume);
 
 router.patch("/:applicationId/status", protect, authorize("recruiter"), updateApplicationStatus);
-router.post("/upload-resume", protect, authorize("jobseeker"), upload.single("resume"), uploadResume);
-router.post("/:jobId", protect, authorize("jobseeker"), upload.single("resume"), createApplication);
+router.post("/upload-resume", protect, authorize("jobseeker"), resumeUpload.single("resume"), uploadResume);
+router.post("/:jobId", protect, authorize("jobseeker"), resumeUpload.single("resume"), createApplication);
 
 module.exports = router;

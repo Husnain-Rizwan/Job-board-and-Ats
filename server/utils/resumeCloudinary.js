@@ -5,10 +5,13 @@ const RESUME_FOLDERS = {
   profile: "job-board/profile-resumes",
 };
 
+const isPdfBuffer = (buffer) =>
+  Buffer.isBuffer(buffer) && buffer.subarray(0, 5).toString() === "%PDF-";
+
 const uploadResumePdf = (file, folder, userId) =>
   new Promise((resolve, reject) => {
-    if (!file?.buffer) {
-      reject(new Error("A resume PDF is required"));
+    if (!file?.buffer || !isPdfBuffer(file.buffer)) {
+      reject(new Error("A valid PDF resume is required"));
       return;
     }
 
@@ -71,4 +74,5 @@ module.exports = {
   deleteResumePdf,
   getSignedResumeUrl,
   resumeMetadata,
+  isPdfBuffer,
 };
